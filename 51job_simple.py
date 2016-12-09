@@ -16,6 +16,8 @@ import datetime
 import json
 import csv
 import codecs
+from collections import namedtuple
+from collections import defaultdict
 
 job_list=[]
 link_Error=set()
@@ -104,25 +106,15 @@ def job_Detial(link):
     company_Id=re.search(re.compile("coid=([0-9]+)$"), company_Link)
     company_Id=company_Id.group(1)
     job_Information=BsObj.find("div",{"class":'xqd'}).findAll("label")
-    company_Nature=''
-    job_Issue=''
-    job_Wage=''
-    company_Area=''
-    company_Scale=''
-    job_PeopleNum=''
+    job_Info=namedtuple('job_Info',['性质',"发布","薪资","地区","规模","招聘"])
+    job_prototype=job_Info("","","","","","")
+    d=defaultdict(list)
     for i in job_Information:
-        if i.get_text()[0:2]=='性质':
-            company_Nature=i.get_text()[2:]
-        if i.get_text()[0:2]=='发布':
-            job_Issue=i.get_text()[2:]
-        if i.get_text()[0:2]=='薪资':
-            job_Wage=i.get_text()[2:]
-        if i.get_text()[0:2]=='地区':
-            company_Area=i.get_text()[2:]
-        if i.get_text()[0:2]=='规模':
-            company_Scale=i.get_text()[2:]
-        if i.get_text()[0:2]=='招聘':
-            job_PeopleNum=i.get_text()[2:]
+        d[i.get_text()[0:2]].append(i.get_text()[2:])
+    print(d.items())
+    job_prototype._replace(d)
+    print(job_prototype)
+    (company_Nature,job_Issue,job_Wage,company_Area,company_Scale,job_PeopleNum)=job_prototype
     #记录地址信息
     try:
         html=urlopen(company_Link)
