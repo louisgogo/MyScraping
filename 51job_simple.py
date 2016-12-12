@@ -107,12 +107,12 @@ def job_Detial(link):
     company_Link=BsObj.find('div',{"class":"xq"}).find("a").attrs["href"]
     company_Id=re.search(re.compile("coid=([0-9]+)$"), company_Link)
     company_Id=company_Id.group(1)
+    #记录工作的基本信息，包括性质,发布,薪资,地区,规模,招聘
     job_Information=BsObj.find("div",{"class":'xqd'}).findAll("label")
     d=defaultdict(dict)
     for i in job_Information:
         d[i.get_text()[0:2]]=i.get_text()[2:]
-    print(d)
-    dict_to_job(d)
+    job_prototype=dict_to_job(d)
     print(job_prototype)
     (company_Nature,job_Issue,job_Wage,company_Area,company_Scale,job_PeopleNum)=job_prototype
     #记录地址信息
@@ -132,10 +132,9 @@ def job_Detial(link):
     data=(job_Id,job_Name,job_Link,job_Wage,company_Id,company_Name,company_Link,company_Nature,company_Scale,company_Area,company_Address,job_PeopleNum,job_Issue,job_Article)
     cur.execute(sql,data)
     conn.commit()
-    #job_list.append(data)
 
+#将工作信息进行替代
 def dict_to_job(s):
-    print("s")
     return job_prototype._replace(**s)
 
 #计算工资的平均数
