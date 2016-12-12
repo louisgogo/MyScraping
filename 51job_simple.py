@@ -29,6 +29,8 @@ jobarea='090200'#提供基本参数，广东030000，四川090000，省会编码
 keyword='策划'
 keyword=quote(keyword)
 pageno=1
+job_Info=namedtuple('job_Info',['性质',"发布","薪资","地区","规模","招聘"])
+job_prototype=job_Info("","","","","","")
 jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword,pageno)
 
 conn=pymysql.connect(host='127.0.0.1',port=3306,user='root',passwd='888888',db='mysql',charset='utf8')
@@ -106,13 +108,11 @@ def job_Detial(link):
     company_Id=re.search(re.compile("coid=([0-9]+)$"), company_Link)
     company_Id=company_Id.group(1)
     job_Information=BsObj.find("div",{"class":'xqd'}).findAll("label")
-    job_Info=namedtuple('job_Info',['性质',"发布","薪资","地区","规模","招聘"])
-    job_prototype=job_Info("","","","","","")
-    d=defaultdict(list)
+    d=defaultdict(dict)
     for i in job_Information:
-        d[i.get_text()[0:2]].append(i.get_text()[2:])
-    print(d.items())
-    job_prototype._replace(d)
+        d[i.get_text()[0:2]]=i.get_text()[2:]
+    print(d)
+    dict_to_job(d)
     print(job_prototype)
     (company_Nature,job_Issue,job_Wage,company_Area,company_Scale,job_PeopleNum)=job_prototype
     #记录地址信息
@@ -133,6 +133,10 @@ def job_Detial(link):
     cur.execute(sql,data)
     conn.commit()
     #job_list.append(data)
+
+def dict_to_job(s):
+    print("s")
+    return job_prototype._replace(**s)
 
 #计算工资的平均数
 def wage_Average(wage):
