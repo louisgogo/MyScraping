@@ -263,81 +263,103 @@ def distance(homeAddress,homeCity):
             cur.execute('UPDATE company SET company_Distance=%s WHERE company_Id=%s'%("",company_Id))
     conn.commit()
   
+#功能选择界面
+while True:
+    print("欢迎使用本爬虫，请输入需要的功能指令：")
+    print("1.进行工作链接的采集")
+    print("2.进行工作数据的采集")
+    print("3.计算平均工资水平")
+    print("4.计算工作地点的坐标")
+    print("5.计算上班所需要时间和路程")
+    print("6.生成所需的工作数据")
+    print("8.重新设置默认参数")
+    print("9.退出本程序")
+    selection=input("请输入需要的功能选项")
+    if selection=="1":
+        job_Reader(jobarea,keyword,pageno)
 
-if input("开始进行工作链接的采集(Y/N)?")=="Y":
-    job_Reader(jobarea,keyword,pageno)
-
-if input("开始进行工作数据采集(Y/N)?")=="Y":
-    try:
-        cur.execute("SELECT job_Link,job_Id FROM workindex")
-        job_Links=cur.fetchall()
-        pages=len(job_Links)
-        page=0
-        for link in job_Links:
-            page+=1
-            (job_Link,job_Id)=link
-            try:
-                print("剩余未采集的工作信息的数量：",pages-page)
-                job_Detial(job_Link)
+    if selection=="2":
+        try:
+            cur.execute("SELECT job_Link,job_Id FROM workindex")
+            job_Links=cur.fetchall()
+            pages=len(job_Links)
+            page=0
+            for link in job_Links:
+                page+=1
+                (job_Link,job_Id)=link
+                try:
+                    print("剩余未采集的工作信息的数量：",pages-page)
+                    job_Detial(job_Link)
                 #if page % 500==0 or page==pages:
                     #sql="INSERT INTO work(job_Id,job_Name,job_Link,job_Wage,company_Id,company_Name,company_Link,company_Nature,company_Scale,company_Area,company_Address,job_PeopleNum,job_Issue,job_Article) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
                     #n=cur.executemany(sql,job_list)
                     #conn.commit()
                     #print("已完成",n,"条工作记录的导入")
                     #job_list.clear()
-            except AttributeError as e:
-                print("错误原因：",e)
-                print('未保存的工作信息的链接是：',job_Link)
-                link_Error.add(job_Link)
-    finally:
-        conn.commit()
-        count=0
-        while len(link_Error)!=0:
-            count+=1
-            relink_Error.update(link_Error)
-            print("需要重新采集的错误日志:",relink_Error)
-            link_Error.clear()
-            for j in relink_Error:
-                try:
-                    job_Detial(j)
-                except Exception as e:
-                    print('重新采集不成功，计入错误文档，错误原因：',e)
-                    link_Error.add(j)
-            if count==4:
-                print('仍未采集的记录数量：',len(link_Error))
-                break 
-        with open('error.txt','wt')as f:
-            f.write('本次程序运行的日期：%s'%str(datetime.date.today()))
-            f.write('\n')
-            for j in link_Error:
-                f.write('未进行采集的工作链接:%s'%str(j))
+                except AttributeError as e:
+                    print("错误原因：",e)
+                    print('未保存的工作信息的链接是：',job_Link)
+                    link_Error.add(job_Link)
+        finally:
+            count=0
+            while len(link_Error)!=0:
+                count+=1
+                relink_Error.update(link_Error)
+                print("需要重新采集的错误日志:",relink_Error)
+                link_Error.clear()
+                for j in relink_Error:
+                    try:
+                        job_Detial(j)
+                    except Exception as e:
+                        print('重新采集不成功，计入错误文档，错误原因：',e)
+                        link_Error.add(j)
+                if count==4:
+                    print('仍未采集的记录数量：',len(link_Error))
+                    break 
+            with open('error.txt','wt')as f:
+                f.write('本次程序运行的日期：%s'%str(datetime.date.today()))
                 f.write('\n')
-    
-if input("是否计算平均工资(Y/N)?")=="Y":
-    job_AverWage()
-    print('平均工资计算完毕')   
+                for j in link_Error:
+                    f.write('未进行采集的工作链接:%s'%str(j))
+                    f.write('\n')
 
-if input("是否计算工作地点的坐标(Y/N)?")=="Y":   
-    coordinate()
-    print('工作直线距离计算完毕')  
-    
-if input("是否计算工作直线距离(Y/N)?")=="Y":   
-    distance('锦江区东风路4号一栋一单元', '成都')
-    print('工作直线距离计算完毕')
+    if selection=="3":
+        job_AverWage()
+        print('平均工资计算完毕')   
 
-if input("是否生成结果数据表(Y/N)?")=="Y":
-    cur.execute("DROP TABLE if exists job_Detail")
-    cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where job_AverWage>=7000)")
-    cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,job_PeopleNum,job_Issue,left(job_Article,200),job_Link from job_Detail")
-    result=cur.fetchall() 
-    cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
-    title=cur.fetchall() 
-    with codecs.open("job_Detail.csv","w",encoding="UTF-8") as f:
-        f_csv=csv.writer(f) 
-        f_csv.writerow(title)
-        f_csv.writerows(result)
-        print("文件生成完毕")
-        
-      
-                
-        
+    if selection=="4":   
+        coordinate()
+        print('工作地点的坐标计算完毕')  
+    
+    if selection=="5":   
+        distance('锦江区东风路4号一栋一单元', '成都')
+        print('工作直线距离计算完毕')
+
+    if selection=="6":
+        cur.execute("DROP TABLE if exists job_Detail")
+        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where job_AverWage>=7000)")
+        cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,job_PeopleNum,job_Issue,left(job_Article,200),job_Link from job_Detail")
+        result=cur.fetchall() 
+        cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
+        title=cur.fetchall() 
+        with codecs.open("job_Detail.csv","w",encoding="UTF-8") as f:
+            f_csv=csv.writer(f) 
+            f_csv.writerow(title)
+            f_csv.writerows(result)
+            print("文件生成完毕")
+    
+    if selection=="8":
+        c=input("请输入所需要查询城市的编号：S-深圳，C-成都")
+        keyword=input("工作的关键字:")
+        if a=="S":
+            jobarea='040000'#提供基本参数，广东030000，四川090000，省会编码是0200
+        if a=="C":
+            jobarea='090200'#提供基本参数，广东030000，四川090000，省会编码是0200
+        keyword=quote(keyword)
+        pageno=1
+        jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword,pageno)
+        print("修改完毕,新的网址为",jobList_url)
+    
+    if selection=="9":
+        pring("程序运行结束，谢谢使用")
+        break
