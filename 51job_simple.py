@@ -301,6 +301,7 @@ while True:
                     print('未保存的工作信息的链接是：',job_Link)
                     link_Error.add(job_Link)
         finally:
+            conn.commit()
             count=0
             while len(link_Error)!=0:
                 count+=1
