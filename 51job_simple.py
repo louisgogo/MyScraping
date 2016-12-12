@@ -18,6 +18,7 @@ import csv
 import codecs
 from collections import namedtuple
 from collections import defaultdict
+import time
 
 job_list=[]
 link_Error=set()
@@ -88,6 +89,7 @@ def job_Reader(jobarea,keyword,pageno):
         
 #获取工作明细        
 def job_Detial(link):
+    start=time.clock()
     while True:
         try:
             html=urlopen(link)
@@ -112,9 +114,8 @@ def job_Detial(link):
     d=defaultdict(dict)
     for i in job_Information:
         d[i.get_text()[0:2]]=i.get_text()[2:]
-    job_prototype=dict_to_job(d)
-    print(job_prototype)
-    (company_Nature,job_Issue,job_Wage,company_Area,company_Scale,job_PeopleNum)=job_prototype
+    job_Information=dict_to_job(d)
+    (company_Nature,job_Issue,job_Wage,company_Area,company_Scale,job_PeopleNum)=job_Information
     #记录地址信息
     try:
         html=urlopen(company_Link)
@@ -131,7 +132,8 @@ def job_Detial(link):
     sql="INSERT INTO work(job_Id,job_Name,job_Link,job_Wage,company_Id,company_Name,company_Link,company_Nature,company_Scale,company_Area,company_Address,job_PeopleNum,job_Issue,job_Article) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
     data=(job_Id,job_Name,job_Link,job_Wage,company_Id,company_Name,company_Link,company_Nature,company_Scale,company_Area,company_Address,job_PeopleNum,job_Issue,job_Article)
     cur.execute(sql,data)
-    conn.commit()
+    end=time.clock()
+    print( "read: %f s" % (end - start))
 
 #将工作信息进行替代
 def dict_to_job(s):
@@ -288,6 +290,7 @@ if input("开始进行工作数据采集(Y/N)?")=="Y":
                 print('未保存的工作信息的链接是：',job_Link)
                 link_Error.add(job_Link)
     finally:
+        conn.commit()
         count=0
         while len(link_Error)!=0:
             count+=1
@@ -309,7 +312,7 @@ if input("开始进行工作数据采集(Y/N)?")=="Y":
             for j in link_Error:
                 f.write('未进行采集的工作链接:%s'%str(j))
                 f.write('\n')
-
+    
 if input("是否计算平均工资(Y/N)?")=="Y":
     job_AverWage()
     print('平均工资计算完毕')   
