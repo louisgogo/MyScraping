@@ -28,6 +28,8 @@ timeout = 20
 socket.setdefaulttimeout(timeout)#这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置 
 jobarea='090200'#提供基本参数，广东030000，四川090000，省会编码是0200
 keyword='策划'
+homeAddress='锦江区东风路4号一栋一单元'
+homeCity="成都"
 keyword=quote(keyword)
 pageno=1
 job_Info=namedtuple('job_Info',['性质',"发布","薪资","地区","规模","招聘"])
@@ -175,39 +177,58 @@ def job_AverWage():
 def getAddress(address,city):
     address=quote(address)
     city=quote(city)
-    html='http://api.map.baidu.com/geocoder/v2/?address=%s&city=%s&output=json&ak=vnHoeEGIBLAis3oHv2VYXQEAouvFbq1b'%(address,city)
+    ak='VNZwxcMAU5gFt3VeKL5p28EsBg4vvEsw'
+    html='http://api.map.baidu.com/geocoder/v2/?address=%s&city=%s&output=json&ak=%s'%(address,city,ak)
     while True:
         try:
-            response=urlopen(html).read()
+            u=urlopen(html).read()
         except Exception as e:
             print("异常原因：",e)
         else:
             break
-    responseJson=json.loads(response.decode('utf-8'))
-    lng=responseJson.get('result').get('location').get('lng')
-    lat=responseJson.get('result').get('location').get('lat')
+    resp=json.loads(u.decode('utf-8'))
+    lng=resp.get('result').get('location').get('lng')
+    lat=resp.get('result').get('location').get('lat')
     return lng,lat
 
-def haversine(lon1, lat1, lon2, lat2): # 经度1，纬度1，经度2，纬度2 （十进制度数）  
-    """ 
-    Calculate the great circle distance between two points  
-    on the earth (specified in decimal degrees) 
-    """  
+#利用百度地图获取两个坐标之间的距离和时间
+def getDistance_and_Duration(lon1,lat1,lon2,lat2):
+    ak='VNZwxcMAU5gFt3VeKL5p28EsBg4vvEsw'
+    html='http://api.map.baidu.com/direction/v2/transit?origin=%s,%s&destination=%s,%s&ak=%s'%(lon1,lat1,lon2,lat2,ak)
+    while True:
+        try:
+            u=urlopen(html).read()
+        except Exception as e:
+            print("异常原因：",e)
+        else:
+            break
+    resp=json.loads(u.decode('utf-8'))
+    distance=resp['result']['routes']['distance']
+    duration=resp['result']['routes']['duration']
+    print(distance,duration)
+    return (distance,duration)
+
+#计算两个坐标的距离
+#def haversine(lon1, lat1, lon2, lat2): # 经度1，纬度1，经度2，纬度2 （十进制度数）  
+#    """ 
+#    Calculate the great circle distance between two points  
+#    on the earth (specified in decimal degrees) 
+#    """  
     # 将十进制度数转化为弧度  
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])  
+#    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])  
     # haversine公式  
-    dlon = lon2 - lon1   
-    dlat = lat2 - lat1   
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2  
-    c = 2 * asin(sqrt(a))   
-    r = 6371 # 地球平均半径，单位为公里  
-    return c * r *1000
+#    dlon = lon2 - lon1   
+#    dlat = lat2 - lat1   
+#    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2  
+#   c = 2 * asin(sqrt(a))   
+#    r = 6371 # 地球平均半径，单位为公里  
+#    return c * r *1000
 
 #获取工作地点的坐标信息：
 def coordinate():
     cur.execute("DROP TABLE if exists company")
     cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('50-150人','少于50人') GROUP BY company_id,company_Address)")
-    cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300))")
+    cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300))")
     cur.execute("SELECT company_Id,company_Area,company_Address FROM company WHERE company_x is null")
     result=cur.fetchall()
     baidu_count=1
@@ -217,10 +238,6 @@ def coordinate():
         city=company_Area[0:2]
         print(city+","+company_Address)
         while True:
-            baidu_count+=1
-            if baidu_count==5900:
-                print("百度地图使用次数到上限，退出程序")
-                break
             try:
                 count+=1
                 if count==2:
@@ -247,20 +264,20 @@ def coordinate():
 #获取工作信息，计算家和该工作地点的直线距离
 def distance(homeAddress,homeCity):
     (lng,lat)=getAddress(homeAddress,homeCity)
-    lon2=lng
-    lat2=lat
-    cur.execute("SELECT company_Id,company_x,company_y from company WHERE company_distance is null or company_distance='' and company_x is not null")
+    lon1=lng
+    lat1=lat
+    cur.execute("SELECT company_Id,company_x,company_y from company WHERE company_Distance is null or company_Distance='' and company_x is not null")
     result=cur.fetchall()
     for i in result:
         try:
             (company_Id,company_x,company_y)=i
-            lon1=eval(company_x)
-            lat1=eval(company_y)
-            cur.execute('UPDATE company SET company_Distance=%s WHERE company_Id=%s'%(round(haversine(lon1, lat1, lon2, lat2),2),company_Id))
-            print(str(round(haversine(lon1, lat1, lon2, lat2),2))+'米')
+            lon2=eval(company_x)
+            lat2=eval(company_y)
+            company_Distance,company_Duration=getDistance_and_Duration(lon1,lat1,lon2,lat2)
+            cur.execute('UPDATE company SET company_Distance=%s,company_Duration=%s WHERE company_Id=%s'%(company_Distance,company_Duration,company_Id))
         except Exception as e:
             print("错误原因：",e)
-            cur.execute('UPDATE company SET company_Distance=%s WHERE company_Id=%s'%("",company_Id))
+            cur.execute('UPDATE company SET company_Distance=%s,company_Duration=%s WHERE company_Id=%s'%("","",company_Id))
     conn.commit()
   
 #功能选择界面
@@ -333,12 +350,12 @@ while True:
         print('工作地点的坐标计算完毕')  
     
     if selection=="5":   
-        distance('锦江区东风路4号一栋一单元', '成都')
+        distance(homeAddress, homeCity)
         print('工作直线距离计算完毕')
 
     if selection=="6":
         cur.execute("DROP TABLE if exists job_Detail")
-        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where job_AverWage>=7000)")
+        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where job_AverWage>=6000 and job_Duration<=2400)")
         cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,job_PeopleNum,job_Issue,left(job_Article,200),job_Link from job_Detail")
         result=cur.fetchall() 
         cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
@@ -354,10 +371,14 @@ while True:
         keyword=input("工作的关键字:")
         if a=="S":
             jobarea='040000'#提供基本参数，广东030000，四川090000，省会编码是0200
+            homeCity="深圳"
         if a=="C":
             jobarea='090200'#提供基本参数，广东030000，四川090000，省会编码是0200
-        keyword=quote(keyword)
+            homeCity="成都"
+        homeAddress=input("住址:")
         pageno=1
+        print("请确认信息：",jobarea,keyword,homeCity,homeAddress)
+        keyword=quote(keyword)
         jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword,pageno)
         print("修改完毕,新的网址为",jobList_url)
     
