@@ -206,7 +206,7 @@ def getDistance_and_Duration(lon1,lat1,lon2,lat2):
         else:
             break
     resp=json.loads(u.decode('utf-8'))
-    print(resp)
+    print(type(resp))
     distance=resp.get('result').get('routes').get('distance')
     duration=resp.get('result').get('routes').get('duration')
     print(distance,duration)
