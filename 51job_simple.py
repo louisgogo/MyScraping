@@ -161,7 +161,9 @@ def wage_Average(wage):
 def job_AverWage():
     cur.execute("SELECT row_Id,job_Wage FROM work WHERE job_AverWage is null or job_AverWage=''")
     result=cur.fetchall()
+    count=0
     for w in result:
+        count+=1
         (row_Id,job_Wage)=w
         job_Wage=wage_Average(job_Wage)
         try:
@@ -170,7 +172,8 @@ def job_AverWage():
             print("工资数为空值",e)
             job_Wage=""
         cur.execute("UPDATE work SET job_AverWage=%s WHERE row_Id=%s",(job_Wage,row_Id))
-        conn.commit()    
+        print("已经计算完成的数量:",count)
+    conn.commit()    
     print('工资平均数计算完毕')  
     
 #利用百度地图的API获取工作地址的经纬度
@@ -194,7 +197,7 @@ def getAddress(address,city):
 #利用百度地图获取两个坐标之间的距离和时间
 def getDistance_and_Duration(lon1,lat1,lon2,lat2):
     ak='VNZwxcMAU5gFt3VeKL5p28EsBg4vvEsw'
-    html='http://api.map.baidu.com/direction/v2/transit?origin=%s,%s&destination=%s,%s&ak=%s'%(lon1,lat1,lon2,lat2,ak)
+    html='http://api.map.baidu.com/direction/v2/transit?origin=%s,%s&destination=%s,%s&output=json&ak=%s'%(lat1,lon1,lat2,lon2,ak)
     while True:
         try:
             u=urlopen(html).read()
@@ -203,8 +206,9 @@ def getDistance_and_Duration(lon1,lat1,lon2,lat2):
         else:
             break
     resp=json.loads(u.decode('utf-8'))
-    distance=resp['result']['routes']['distance']
-    duration=resp['result']['routes']['duration']
+    print(resp)
+    distance=resp.get('result').get('routes').get('distance')
+    duration=resp.get('result').get('routes').get('duration')
     print(distance,duration)
     return (distance,duration)
 
@@ -259,20 +263,20 @@ def coordinate():
         except Exception as e:
             print("错误原因：",e)
             cur.execute('UPDATE company SET company_x={0},company_y={1} WHERE company_Id={1}'.format("","",company_Id))
-        conn.commit()
+    conn.commit()
 
 #获取工作信息，计算家和该工作地点的直线距离
 def distance(homeAddress,homeCity):
     (lng,lat)=getAddress(homeAddress,homeCity)
-    lon1=lng
-    lat1=lat
+    lon1=round(lng,6)
+    lat1=round(lat,6)
     cur.execute("SELECT company_Id,company_x,company_y from company WHERE company_Distance is null or company_Distance='' and company_x is not null")
     result=cur.fetchall()
     for i in result:
         try:
             (company_Id,company_x,company_y)=i
-            lon2=eval(company_x)
-            lat2=eval(company_y)
+            lon2=round(eval(company_x),6)
+            lat2=round(eval(company_y),6)
             company_Distance,company_Duration=getDistance_and_Duration(lon1,lat1,lon2,lat2)
             cur.execute('UPDATE company SET company_Distance=%s,company_Duration=%s WHERE company_Id=%s'%(company_Distance,company_Duration,company_Id))
         except Exception as e:
@@ -355,7 +359,7 @@ while True:
 
     if selection=="6":
         cur.execute("DROP TABLE if exists job_Detail")
-        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where job_AverWage>=6000 and job_Duration<=2400)")
+        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where job_AverWage>=6000 or job_AverWage=""  and job_Duration<=2400)")
         cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,job_PeopleNum,job_Issue,left(job_Article,200),job_Link from job_Detail")
         result=cur.fetchall() 
         cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
