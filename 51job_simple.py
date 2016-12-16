@@ -206,11 +206,21 @@ def getDistance_and_Duration(lon1,lat1,lon2,lat2):
         else:
             break
     resp=json.loads(u.decode('utf-8'))
-    print(type(resp))
-    distance=resp.get('result').get('routes')[1].get("distance")
-    duration=resp.get('result').get('routes')[1].get("duration")
-    print(distance,duration)
-    return (distance,duration)
+    print(resp)
+    try:
+        if resp.get('result').get('routes')==[]:
+            distance=resp.get('result').get('taxi').get("distance")
+            duration=resp.get('result').get('taxi').get("duration")
+            company_Traffic="Taxi"
+        distance=resp.get('result').get('routes')[0].get("distance")
+        duration=resp.get('result').get('routes')[0].get("duration")
+        company_Traffic="Public Traffic"
+    except Exception as e:
+        print("出现错误，原因为：",e)
+        distance=''
+        duration=''
+        company_Traffic=""
+    return (distance,duration,company_Traffic)
 
 #计算两个坐标的距离
 #def haversine(lon1, lat1, lon2, lat2): # 经度1，纬度1，经度2，纬度2 （十进制度数）  
@@ -232,7 +242,7 @@ def getDistance_and_Duration(lon1,lat1,lon2,lat2):
 def coordinate():
     cur.execute("DROP TABLE if exists company")
     cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('50-150人','少于50人') GROUP BY company_id,company_Address)")
-    cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300))")
+    cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
     cur.execute("SELECT company_Id,company_Area,company_Address FROM company WHERE company_x is null")
     result=cur.fetchall()
     baidu_count=1
@@ -262,7 +272,7 @@ def coordinate():
             cur.execute('UPDATE company SET company_x={0},company_y={1} WHERE company_Id={2}'.format(str(lng),str(lat),company_Id))
         except Exception as e:
             print("错误原因：",e)
-            cur.execute('UPDATE company SET company_x={0},company_y={1} WHERE company_Id={1}'.format("","",company_Id))
+            cur.execute('UPDATE company SET company_x={0},company_y={1} WHERE company_Id={2}'.format("","",company_Id))
     conn.commit()
 
 #获取工作信息，计算家和该工作地点的直线距离
@@ -273,16 +283,20 @@ def distance(homeAddress,homeCity):
     cur.execute("SELECT company_Id,company_x,company_y from company WHERE company_Distance is null or company_Distance='' and company_x is not null")
     result=cur.fetchall()
     for i in result:
-        try:
-            (company_Id,company_x,company_y)=i
-            lon2=round(eval(company_x),6)
-            lat2=round(eval(company_y),6)
-            company_Distance,company_Duration=getDistance_and_Duration(lon1,lat1,lon2,lat2)
-            cur.execute('UPDATE company SET company_Distance=%s,company_Duration=%s WHERE company_Id=%s'%(company_Distance,company_Duration,company_Id))
-        except Exception as e:
-            print("错误原因：",e)
-            cur.execute('UPDATE company SET company_Distance=%s,company_Duration=%s WHERE company_Id=%s'%("","",company_Id))
-    conn.commit()
+        #try:
+        (company_Id,company_x,company_y)=i
+        lon2=round(eval(company_x),6)
+        lat2=round(eval(company_y),6)
+        company_Distance,company_Duration,company_Traffic=getDistance_and_Duration(lon1,lat1,lon2,lat2)
+        print(company_Distance,company_Duration,company_Traffic)
+        cur.execute('UPDATE company SET company_Distance=%s WHERE company_Id=%s'%(company_Distance,company_Id))
+        cur.execute('UPDATE company SET company_Duration=%s WHERE company_Id=%s'%(company_Duration,company_Id))
+        cur.execute('UPDATE company SET company_Traffic=%s WHERE company_Id=%s'%(company_Traffic,company_Id))
+        #cur.execute('UPDATE company SET company_Distance={0},company_Duration={1},company_Traffic={2} WHERE company_Id={3}'.format(str(company_Distance),str(company_Duration),company_Traffic,company_Id))
+        #except Exception as e:
+            #print("错误原因：",e)
+            #cur.execute('UPDATE company SET company_Distance=%s,company_Duration=%s WHERE company_Id=%s'%("","",company_Id))
+        conn.commit()
   
 #功能选择界面
 while True:
