@@ -29,9 +29,9 @@ timeout = 20
 socket.setdefaulttimeout(timeout)#这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置 
 jobarea='090200'#提供基本参数，广东030000，四川090000，省会编码是0200
 keyword='策划'
+keyword_q=quote(keyword)
 homeAddress='锦江区东风路4号一栋一单元'
 homeCity="成都"
-keyword_q=quote(keyword)
 pageno=1
 job_Info=namedtuple('job_Info',['性质',"发布","薪资","地区","规模","招聘"])
 job_prototype=job_Info("","","","","","")
@@ -58,7 +58,8 @@ except (AttributeError,pymysql.err.InternalError):
     print('TABLE已经存在')
     
 #读取工作界面，并获取工作编号
-def job_Reader(jobarea,keyword_q,pageno):
+def job_Reader(jobarea,keyword,pageno):
+    keyword_q=quote(keyword)
     while True:
         jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword_q,pageno)
         while True:
@@ -312,7 +313,11 @@ while True:
     print("9.退出本程序")
     selection=input("请输入需要的功能选项")
     if selection=="1":
-        job_Reader(jobarea,keyword_q,pageno)
+        if input("是否需要查询多个关键字(Y/N)")=="Y":
+            for i in ("策划","运营","品牌"):
+                job_Reader(jobarea, i, pageno)
+        else:
+            job_Reader(jobarea,keyword,pageno)
 
     if selection=="2":
         try:
@@ -373,9 +378,16 @@ while True:
         print('工作直线距离计算完毕')
 
     if selection=="6":
+        date_time=[]
+        for i in range(3):
+            a=datetime.date.today()-datetime.timedelta(days=i)
+            a=str(a)
+            date_time.append(a)
+        date_time=tuple(date_time)
+        print(date_time)
         cur.execute("DROP TABLE if exists job_Detail")
-        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where (job_AverWage>=6000 or job_AverWage='') and (company_Duration<=2400 or company_Duration=''))")
-        cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,100),job_Link from job_Detail")
+        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
+        cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,100),job_Link from job_Detail where (job_AverWage>=6000 or job_AverWage='') and (company_Duration<=3600 or company_Duration='') and (job_Issue in {0})".format(date_time))
         result=cur.fetchall() 
         cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
         title=cur.fetchall() 
