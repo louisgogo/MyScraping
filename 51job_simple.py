@@ -19,6 +19,7 @@ import codecs
 from collections import namedtuple
 from collections import defaultdict
 import time
+import heapq
 
 job_list=[]
 link_Error=set()
@@ -30,11 +31,11 @@ jobarea='090200'#提供基本参数，广东030000，四川090000，省会编码
 keyword='策划'
 homeAddress='锦江区东风路4号一栋一单元'
 homeCity="成都"
-keyword=quote(keyword)
+keyword_q=quote(keyword)
 pageno=1
 job_Info=namedtuple('job_Info',['性质',"发布","薪资","地区","规模","招聘"])
 job_prototype=job_Info("","","","","","")
-jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword,pageno)
+jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword_q,pageno)
 
 conn=pymysql.connect(host='127.0.0.1',port=3306,user='root',passwd='888888',db='mysql',charset='utf8')
 cur=conn.cursor()
@@ -57,9 +58,9 @@ except (AttributeError,pymysql.err.InternalError):
     print('TABLE已经存在')
     
 #读取工作界面，并获取工作编号
-def job_Reader(jobarea,keyword,pageno):
+def job_Reader(jobarea,keyword_q,pageno):
     while True:
-        jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword,pageno)
+        jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword_q,pageno)
         while True:
             try:
                 html=urlopen(jobList_url)
@@ -81,11 +82,12 @@ def job_Reader(jobarea,keyword,pageno):
             else:
                 break
         for i in jobLinks:
-            job_Link=i.attrs["href"]
-            job_Id=re.search(re.compile("jobid=([0-9]+)$"), job_Link)
-            job_Id=job_Id.group(1)
-            data=(job_Link,job_Id)
-            job_list.append(data)
+            if keyword in i.h3.get_text():
+                job_Link=i.attrs["href"]
+                job_Id=re.search(re.compile("jobid=([0-9]+)$"), job_Link)
+                job_Id=job_Id.group(1)
+                data=(job_Link,job_Id)
+                job_list.append(data)
         print("已经爬完的页数为：",pageno)
         pageno+=1
         
@@ -107,7 +109,7 @@ def job_Detial(link):
     company_Name=BsObj.find("a",{"class":'xqa'}).get_text()
     job_Article=BsObj.find('article').get_text()
     #对工作内容进行格式化
-    job_Article=re.sub(re.compile("[(%)*(' ')*(\t)*(\r)*]"),"",job_Article)
+    job_Article=re.sub(re.compile("[%*|' '*|\t*|\r*]"),"",job_Article)
     company_Link=BsObj.find('div',{"class":"xq"}).find("a").attrs["href"]
     company_Id=re.search(re.compile("coid=([0-9]+)$"), company_Link)
     company_Id=company_Id.group(1)
@@ -206,20 +208,26 @@ def getDistance_and_Duration(lon1,lat1,lon2,lat2):
         else:
             break
     resp=json.loads(u.decode('utf-8'))
-    print(resp)
     try:
         if resp.get('result').get('routes')==[]:
             distance=resp.get('result').get('taxi').get("distance")
             duration=resp.get('result').get('taxi').get("duration")
-            company_Traffic="Taxi"
-        distance=resp.get('result').get('routes')[0].get("distance")
-        duration=resp.get('result').get('routes')[0].get("duration")
-        company_Traffic="Public Traffic"
+            company_Traffic="的士"
+        else:
+            heap=[]
+            heapq.heapify(heap)
+            for i in resp.get('result').get('routes'):
+                distance=i.get("distance")
+                duration=i.get("duration")
+                a=(duration,distance)
+                heapq.heappush(heap,a)
+            (duration,distance)=heap[0]
+            company_Traffic="公共交通"
     except Exception as e:
         print("出现错误，原因为：",e)
         distance=''
         duration=''
-        company_Traffic=""
+        company_Traffic=''
     return (distance,duration,company_Traffic)
 
 #计算两个坐标的距离
@@ -283,20 +291,13 @@ def distance(homeAddress,homeCity):
     cur.execute("SELECT company_Id,company_x,company_y from company WHERE company_Distance is null or company_Distance='' and company_x is not null")
     result=cur.fetchall()
     for i in result:
-        #try:
         (company_Id,company_x,company_y)=i
         lon2=round(eval(company_x),6)
         lat2=round(eval(company_y),6)
         company_Distance,company_Duration,company_Traffic=getDistance_and_Duration(lon1,lat1,lon2,lat2)
         print(company_Distance,company_Duration,company_Traffic)
-        cur.execute('UPDATE company SET company_Distance=%s WHERE company_Id=%s'%(company_Distance,company_Id))
-        cur.execute('UPDATE company SET company_Duration=%s WHERE company_Id=%s'%(company_Duration,company_Id))
-        cur.execute('UPDATE company SET company_Traffic=%s WHERE company_Id=%s'%(company_Traffic,company_Id))
-        #cur.execute('UPDATE company SET company_Distance={0},company_Duration={1},company_Traffic={2} WHERE company_Id={3}'.format(str(company_Distance),str(company_Duration),company_Traffic,company_Id))
-        #except Exception as e:
-            #print("错误原因：",e)
-            #cur.execute('UPDATE company SET company_Distance=%s,company_Duration=%s WHERE company_Id=%s'%("","",company_Id))
-        conn.commit()
+        cur.execute("UPDATE company SET company_Distance='{0}',company_Duration='{1}',company_Traffic='{2}' WHERE company_Id='{3}'".format(company_Distance,company_Duration,company_Traffic,company_Id))
+    conn.commit()
   
 #功能选择界面
 while True:
@@ -311,7 +312,7 @@ while True:
     print("9.退出本程序")
     selection=input("请输入需要的功能选项")
     if selection=="1":
-        job_Reader(jobarea,keyword,pageno)
+        job_Reader(jobarea,keyword_q,pageno)
 
     if selection=="2":
         try:
@@ -373,8 +374,8 @@ while True:
 
     if selection=="6":
         cur.execute("DROP TABLE if exists job_Detail")
-        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where job_AverWage>=6000 or job_AverWage=""  and job_Duration<=2400)")
-        cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,job_PeopleNum,job_Issue,left(job_Article,200),job_Link from job_Detail")
+        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where (job_AverWage>=6000 or job_AverWage='') and (company_Duration<=2400 or company_Duration=''))")
+        cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,100),job_Link from job_Detail")
         result=cur.fetchall() 
         cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
         title=cur.fetchall() 
@@ -385,7 +386,7 @@ while True:
             print("文件生成完毕")
     
     if selection=="8":
-        c=input("请输入所需要查询城市的编号：S-深圳，C-成都")
+        a=input("请输入所需要查询城市的编号：S-深圳，C-成都")
         keyword=input("工作的关键字:")
         if a=="S":
             jobarea='040000'#提供基本参数，广东030000，四川090000，省会编码是0200
@@ -393,11 +394,12 @@ while True:
         if a=="C":
             jobarea='090200'#提供基本参数，广东030000，四川090000，省会编码是0200
             homeCity="成都"
-        homeAddress=input("住址:")
+        if input("是否需要更改住址(Y/N)")=="Y":
+            homeAddress=input("住址:")
         pageno=1
         print("请确认信息：",jobarea,keyword,homeCity,homeAddress)
-        keyword=quote(keyword)
-        jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword,pageno)
+        keyword_q=quote(keyword)
+        jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword_q,pageno)
         print("修改完毕,新的网址为",jobList_url)
     
     if selection=="9":
