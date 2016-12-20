@@ -303,11 +303,8 @@ def distance(homeAddress,homeCity):
         cur.execute("UPDATE company SET company_Distance='{0}',company_Duration='{1}',company_Traffic='{2}' WHERE company_Id='{3}'".format(company_Distance,company_Duration,company_Traffic,company_Id))
     conn.commit()
   
-<<<<<<< HEAD
-#简单的功能筛选界面：
-=======
+
 #功能选择界面
->>>>>>> mend
 while True:
     print("欢迎使用本爬虫，请输入需要的功能指令：")
     print("1.进行工作链接的采集")
@@ -320,9 +317,6 @@ while True:
     print("9.退出本程序")
     selection=input("请输入需要的功能选项")
     if selection=="1":
-<<<<<<< HEAD
-        job_Reader(jobarea,keyword,pageno)
-=======
         if input("是否需要查询多个关键字(Y/N)")=="Y":
             for i in ("策划","运营","品牌"):
                 job_Reader(jobarea, i, pageno)
@@ -333,7 +327,6 @@ while True:
             conn.commit()
         else:
             job_Reader(jobarea,keyword,pageno)
->>>>>>> mend
 
     if selection=="2":
         try:
@@ -358,10 +351,7 @@ while True:
                     print('未保存的工作信息的链接是：',job_Link)
                     link_Error.add(job_Link)
         finally:
-<<<<<<< HEAD
-=======
             conn.commit()
->>>>>>> mend
             count=0
             while len(link_Error)!=0:
                 count+=1
@@ -393,15 +383,6 @@ while True:
         print('工作地点的坐标计算完毕')  
     
     if selection=="5":   
-<<<<<<< HEAD
-        distance('锦江区东风路4号一栋一单元', '成都')
-        print('工作直线距离计算完毕')
-
-    if selection=="6":
-        cur.execute("DROP TABLE if exists job_Detail")
-        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id where job_AverWage>=7000)")
-        cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,job_PeopleNum,job_Issue,left(job_Article,200),job_Link from job_Detail")
-=======
         distance(homeAddress, homeCity)
         print('工作直线距离计算完毕')
 
@@ -416,7 +397,6 @@ while True:
         cur.execute("DROP TABLE if exists job_Detail")
         cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
         cur.execute("select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (job_AverWage>=6000 or job_AverWage='') and (company_Duration<=3600 or company_Duration='') and (job_Issue in {0})".format(date_time))
->>>>>>> mend
         result=cur.fetchall() 
         cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
         title=cur.fetchall() 
@@ -427,17 +407,6 @@ while True:
             print("文件生成完毕")
     
     if selection=="8":
-<<<<<<< HEAD
-        c=input("请输入所需要查询城市的编号：S-深圳，C-成都")
-        keyword=input("工作的关键字:")
-        if a=="S":
-            jobarea='040000'#提供基本参数，广东030000，四川090000，省会编码是0200
-        if a=="C":
-            jobarea='090200'#提供基本参数，广东030000，四川090000，省会编码是0200
-        keyword=quote(keyword)
-        pageno=1
-        jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword,pageno)
-=======
         a=input("请输入所需要查询城市的编号：S-深圳，C-成都")
         keyword=input("工作的关键字:")
         if a=="S":
@@ -452,15 +421,9 @@ while True:
         print("请确认信息：",jobarea,keyword,homeCity,homeAddress)
         keyword_q=quote(keyword)
         jobList_url='http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s'%(jobarea,keyword_q,pageno)
->>>>>>> mend
         print("修改完毕,新的网址为",jobList_url)
     
     if selection=="9":
         pring("程序运行结束，谢谢使用")
-<<<<<<< HEAD
         break
-                 
-        
-=======
-        break
->>>>>>> mend
+    
