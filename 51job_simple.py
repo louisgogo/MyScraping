@@ -20,6 +20,10 @@ from collections import namedtuple
 from collections import defaultdict
 import time
 import heapq
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.header import Header
+import smtplib
 
 job_list=[]
 link_Error=set()
@@ -302,7 +306,26 @@ def distance(homeAddress,homeCity):
         print(company_Distance,company_Duration,company_Traffic)
         cur.execute("UPDATE company SET company_Distance='{0}',company_Duration='{1}',company_Traffic='{2}' WHERE company_Id='{3}'".format(company_Distance,company_Duration,company_Traffic,company_Id))
     conn.commit()
-  
+
+#发送邮件的模块  
+def send_email(SMTP_host, from_account, from_passwd, to_account, subject, content):
+    
+    email_client = smtplib.SMTP_SSL(SMTP_host,'465')
+    email_client.login(from_account, from_passwd)
+    # create msg
+    msg = MIMEMultipart()
+    msg['Subject'] = Header(subject, 'utf-8')  # subject
+    msg['From'] = from_account
+    msg['To'] = to_account
+    msg.attach(MIMEText(content,'plain','utf-8'))
+    with open('job_Detail.csv','rb') as f:
+        mime = MIMEText(f.read(), 'base64', 'utf_8')  
+        mime["Content-Type"] = 'application/octet-stream'
+        mime["Content-Disposition"] = 'attachment; filename={0}job_Detail.csv'.format(datetime.date.today())
+        msg.attach(mime) 
+    email_client.set_debuglevel(1)
+    email_client.sendmail(from_account, to_account, msg.as_string())
+    email_client.quit()
 
 #功能选择界面
 while True:
@@ -405,6 +428,8 @@ while True:
             f_csv.writerow(title)
             f_csv.writerows(result)
             print("文件生成完毕")
+        subject="{0}的工作记录，辛苦宝宝鸡啦，请查收".format(datetime.date.today())
+        send_email('smtp.qq.com', '272861776@qq.com', 'zfpnhtfqmjpxbjji', 'larkjoe@126.com', subject, '今天的工作邮件，请查收，最爱你的贝贝')
     
     if selection=="8":
         a=input("请输入所需要查询城市的编号：S-深圳，C-成都")
