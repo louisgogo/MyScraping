@@ -400,7 +400,7 @@ while True:
         result=cur.fetchall() 
         cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
         title=cur.fetchall() 
-        with codecs.open("job_Detail.csv","w",encoding="UTF-8") as f:
+        with codecs.open("job_Detail.csv","w",encoding="utf_8_sig") as f:
             f_csv=csv.writer(f) 
             f_csv.writerow(title)
             f_csv.writerows(result)
