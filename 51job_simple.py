@@ -328,7 +328,7 @@ while True:
         else:
             job_Reader(jobarea,keyword,pageno)
 
-    if selection=="2":
+    #if selection=="2":
         try:
             cur.execute("SELECT job_Link,job_Id FROM workindex")
             job_Links=cur.fetchall()
@@ -374,19 +374,19 @@ while True:
                     f.write('未进行采集的工作链接:%s'%str(j))
                     f.write('\n')
 
-    if selection=="3":
+    #if selection=="3":
         job_AverWage()
         print('平均工资计算完毕')   
 
-    if selection=="4":   
+    #if selection=="4":   
         coordinate()
         print('工作地点的坐标计算完毕')  
     
-    if selection=="5":   
+    #if selection=="5":   
         distance(homeAddress, homeCity)
         print('工作直线距离计算完毕')
 
-    if selection=="6":
+    #if selection=="6":
         date_time=[]
         for i in range(3):
             a=datetime.date.today()-datetime.timedelta(days=i)
