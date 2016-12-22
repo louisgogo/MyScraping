@@ -409,7 +409,7 @@ while True:
         distance(homeAddress, homeCity)
         print('工作直线距离计算完毕')
 
-    if selection=="6":
+    #if selection=="6":
         date_time=[]
         for i in range(3):
             a=datetime.date.today()-datetime.timedelta(days=i)
