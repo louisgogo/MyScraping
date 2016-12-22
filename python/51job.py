@@ -244,7 +244,6 @@ def coordinate():
     cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
     cur.execute("SELECT company_Id,company_Area,company_Address FROM company WHERE company_x is null")
     result=cur.fetchall()
-    baidu_count=1
     for i in result:
         count=0
         (company_Id,company_Area,company_Address)=i
@@ -346,12 +345,6 @@ while True:
                 try:
                     print("剩余未采集的工作信息的数量：",pages-page)
                     job_Detial(job_Link)
-                #if page % 500==0 or page==pages:
-                    #sql="INSERT INTO work(job_Id,job_Name,job_Link,job_Wage,company_Id,company_Name,company_Link,company_Nature,company_Scale,company_Area,company_Address,job_PeopleNum,job_Issue,job_Article) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                    #n=cur.executemany(sql,job_list)
-                    #conn.commit()
-                    #print("已完成",n,"条工作记录的导入")
-                    #job_list.clear()
                 except AttributeError as e:
                     print("错误原因：",e)
                     print('未保存的工作信息的链接是：',job_Link)
