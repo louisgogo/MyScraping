@@ -405,7 +405,7 @@ while True:
             f_csv.writerows(result)
             print("文件生成完毕")
         subject="{0}的工作记录，辛苦宝宝鸡啦，请查收".format(datetime.date.today())
-        send_email('smtp.qq.com', '272861776@qq.com', 'zfpnhtfqmjpxbjji', 'larkjoe@126.com', subject, '今天的工作邮件，请查收，最爱你的贝贝')
+        send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej', 'larkjoe@126.com', subject, '今天的工作邮件，请查收，最爱你的贝贝')
     
     if selection=="8":
         a=input("请输入所需要查询城市的编号：S-深圳，C-成都")

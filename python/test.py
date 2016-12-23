@@ -4,4 +4,5 @@ Created on 2016年12月22日
 
 @author: louis
 '''
-print('test')
+import os
+print(os.listdir('.'))
