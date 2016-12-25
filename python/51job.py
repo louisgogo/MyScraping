@@ -387,7 +387,7 @@ while True:
 
     #if selection=="6":
         date_time=[]
-        for i in range(3):
+        for i in range(2):
             a=datetime.date.today()-datetime.timedelta(days=i)
             a=str(a)
             date_time.append(a)
