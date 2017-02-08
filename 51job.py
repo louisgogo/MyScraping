@@ -24,88 +24,103 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header
 import smtplib
 
-job_list = []
-link_Error = set()
-relink_Error = set()
-data = ()
+# 初始设置
 timeout = 20
 socket.setdefaulttimeout(timeout)  # 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
+
+
 jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
 keyword = '策划'
 keyword_q = quote(keyword)
 homeAddress = '锦江区东风路4号一栋一单元'
 homeCity = "成都"
-pageno = 1
+
 job_Info = namedtuple('job_Info', ['性质', "发布", "薪资", "地区", "规模", "招聘"])
 job_prototype = job_Info("", "", "", "", "", "")
 jobList_url = 'http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s' % (
     jobarea, keyword_q, pageno)
 
-conn = pymysql.connect(host='127.0.0.1', port=3306,
-                       user='root', passwd='888888', db='mysql', charset='utf8')
-cur = conn.cursor()
-
-selection = input('是否清空数据库（Y/N）')
-if selection == 'Y':
-    try:
-        cur.execute("DROP DATABASE job_CD")
-    except Exception as e:
-        print("数据库清空发生错误：", e)
-else:
-    pass
-try:
-    cur.execute('CREATE DATABASE job_CD')
-except (pymysql.err.InternalError, pymysql.err.ProgrammingError):
-    print('数据库已经存在')
-cur.execute('USE job_CD')
-# 建立数据库表格
-try:
-    cur.execute('CREATE TABLE work (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Name VARCHAR(200) ,job_Link VARCHAR(600),job_Wage VARCHAR(300),job_AverWage VARCHAR(200),company_Id VARCHAR(200),company_Name VARCHAR(200),company_Link VARCHAR(600),company_Nature VARCHAR(200),company_Scale VARCHAR(200),company_Area VARCHAR(400),company_Address VARCHAR(500),job_PeopleNum VARCHAR(400),job_Issue date,job_Article TEXT(20000),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))')
-    cur.execute("CREATE TABLE workindex (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Link VARCHAR(600),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))")
-except (AttributeError, pymysql.err.InternalError):
-    print('TABLE已经存在')
 
 # 读取工作界面，并获取工作编号
 
+class job:
+    pageno = 1
+    job_list = []
+    link_Error = set()
+    relink_Error = set()
+    data = ()
 
-def job_Reader(jobarea, keyword, pageno):
-    keyword_q = quote(keyword)
-    while True:
-        jobList_url = 'http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s' % (
-            jobarea, keyword_q, pageno)
-        while True:
+    def __init__(self, jobarea, keyword, homeAddress, homeCity):
+        self.jobarea = jobarea
+        self.keyword = keyword
+        self.homeAddress = homeAddress
+        self.homeCity = homeCity
+
+    def job_Store(self):
+        # 数据库设置
+        conn = pymysql.connect(host='127.0.0.1', port=3306,
+                               user='root', passwd='888888', db='mysql', charset='utf8')
+        cur = conn.cursor()
+
+        selection = input('是否清空数据库（Y/N）')
+        if selection == 'Y':
             try:
-                html = urlopen(jobList_url)
-                BsObj = BeautifulSoup(html, 'html.parser')
-                html.close()
-                try:
-                    if BsObj.find("p", {"class": "no_record"}).get_text() == "暂无搜索记录":
-                        print("全部记录搜索完毕,现在导入数据库")
-                        sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
-                        n = cur.executemany(sql, job_list)
-                        print("导入完毕，共生成记录:", n)
-                        conn.commit()
-                        return
-                except:
-                    pass
-                jobLinks = BsObj.find("div", {'class': 'jblist'}).findAll('a')
+                cur.execute("DROP DATABASE job_CD")
             except Exception as e:
-                print(" 有问题，重新载入", e)
-            else:
-                break
-        for i in jobLinks:
-            if keyword in i.h3.get_text():
-                job_Link = i.attrs["href"]
-                job_Id = re.search(re.compile("jobid=([0-9]+)$"), job_Link)
-                job_Id = job_Id.group(1)
-                data = (job_Link, job_Id)
-                job_list.append(data)
-        print("已经爬完的页数为：", pageno)
-        pageno += 1
+                print("数据库清空发生错误：", e)
+        else:
+            pass
+        try:
+            cur.execute('CREATE DATABASE job_CD')
+        except (pymysql.err.InternalError, pymysql.err.ProgrammingError):
+            print('数据库已经存在')
+        cur.execute('USE job_CD')
+        # 建立数据库表格
+        try:
+            cur.execute('CREATE TABLE work (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Name VARCHAR(200) ,job_Link VARCHAR(600),job_Wage VARCHAR(300),job_AverWage VARCHAR(200),company_Id VARCHAR(200),company_Name VARCHAR(200),company_Link VARCHAR(600),company_Nature VARCHAR(200),company_Scale VARCHAR(200),company_Area VARCHAR(400),company_Address VARCHAR(500),job_PeopleNum VARCHAR(400),job_Issue date,job_Article TEXT(20000),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))')
+            cur.execute("CREATE TABLE workindex (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Link VARCHAR(600),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))")
+        except (AttributeError, pymysql.err.InternalError):
+            print('TABLE已经存在')
+
+    def job_Reader(self):
+        # 获取工作列表
+        keyword_q = quote(self.keyword)
+        while True:
+            jobList_url = 'http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s' % (
+                self.jobarea, keyword_q, pageno)
+            while True:
+                try:
+                    html = urlopen(jobList_url)
+                    BsObj = BeautifulSoup(html, 'html.parser')
+                    html.close()
+                    try:
+                        if BsObj.find("p", {"class": "no_record"}).get_text() == "暂无搜索记录":
+                            print("全部记录搜索完毕,现在导入数据库")
+                            sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
+                            n = cur.executemany(sql, job_list)
+                            print("导入完毕，共生成记录:", n)
+                            conn.commit()
+                            return
+                    except:
+                        pass
+                    jobLinks = BsObj.find(
+                        "div", {'class': 'jblist'}).findAll('a')
+                except Exception as e:
+                    print(" 有问题，重新载入", e)
+                else:
+                    break
+            for i in jobLinks:
+                if keyword in i.h3.get_text():
+                    job_Link = i.attrs["href"]
+                    job_Id = re.search(re.compile("jobid=([0-9]+)$"), job_Link)
+                    job_Id = job_Id.group(1)
+                    data = (job_Link, job_Id)
+                    job_list.append(data)
+            print("已经爬完的页数为：", pageno)
+            pageno += 1
+
 
 # 获取工作明细
-
-
 def job_Detial(link):
     start = time.clock()
     while True:
