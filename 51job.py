@@ -28,20 +28,11 @@ import smtplib
 timeout = 20
 socket.setdefaulttimeout(timeout)  # 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
 
-
-jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
-keyword = '策划'
-keyword_q = quote(keyword)
-homeAddress = '锦江区东风路4号一栋一单元'
-homeCity = "成都"
-
 job_Info = namedtuple('job_Info', ['性质', "发布", "薪资", "地区", "规模", "招聘"])
 job_prototype = job_Info("", "", "", "", "", "")
-jobList_url = 'http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s' % (
-    jobarea, keyword_q, pageno)
-
 
 # 读取工作界面，并获取工作编号
+
 
 class job:
     pageno = 1
@@ -62,18 +53,11 @@ class job:
                                user='root', passwd='888888', db='mysql', charset='utf8')
         cur = conn.cursor()
 
-        selection = input('是否清空数据库（Y/N）')
-        if selection == 'Y':
-            try:
-                cur.execute("DROP DATABASE job_CD")
-            except Exception as e:
-                print("数据库清空发生错误：", e)
-        else:
-            pass
         try:
+            cur.execute("DROP DATABASE job_CD")
             cur.execute('CREATE DATABASE job_CD')
-        except (pymysql.err.InternalError, pymysql.err.ProgrammingError):
-            print('数据库已经存在')
+        except Exception as e:
+            cur.execute('CREATE DATABASE job_CD')
         cur.execute('USE job_CD')
         # 建立数据库表格
         try:
@@ -172,11 +156,10 @@ def job_Detial(link):
     end = time.clock()
     print("read: %f s" % (end - start))
 
-# 将工作信息进行替代
+    # 将工作信息进行替代
 
-
-def dict_to_job(s):
-    return job_prototype._replace(**s)
+    def dict_to_job(s):
+        return job_prototype._replace(**s)
 
 # 计算工资的平均数
 
@@ -361,126 +344,95 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
     email_client.sendmail(from_account, to_account, msg.as_string())
     email_client.quit()
 
-# 功能选择界面
-while True:
-    print("欢迎使用本爬虫，请输入需要的功能指令：")
-    print("1.进行工作链接的采集")
-    print("2.进行工作数据的采集")
-    print("3.计算平均工资水平")
-    print("4.计算工作地点的坐标")
-    print("5.计算上班所需要时间和路程")
-    print("6.生成所需的工作数据")
-    print("8.重新设置默认参数")
-    print("9.退出本程序")
-    selection = input("请输入需要的功能选项")
-    if selection == "1":
-        if input("是否需要查询多个关键字(Y/N)") == "Y":
-            for i in ("策划", "运营", "品牌"):
-                job_Reader(jobarea, i, pageno)
-            cur.execute(
-                "create table test (select * from workindex group by job_Id order by row_id)")
-            cur.execute("drop table workindex")
-            cur.execute("create table workindex (select * from test)")
-            cur.execute("drop table test")
-            conn.commit()
-        else:
-            job_Reader(jobarea, keyword, pageno)
 
-    # if selection=="2":
-        try:
-            cur.execute("SELECT job_Link,job_Id FROM workindex")
-            job_Links = cur.fetchall()
-            pages = len(job_Links)
-            page = 0
-            for link in job_Links:
-                page += 1
-                (job_Link, job_Id) = link
+def run(jobarea, keyword, homeAddress, homeCity, email):
+    for i in keyword:
+        work = job(jobarea, i, homeAddress, homeCity)
+        work.job_Reader()
+        work.job_Store()
+    cur.execute(
+        "create table test (select * from workindex group by job_Id order by row_id)")
+    cur.execute("drop table workindex")
+    cur.execute("create table workindex (select * from test)")
+    cur.execute("drop table test")
+    conn.commit()
+
+    try:
+        cur.execute("SELECT job_Link,job_Id FROM workindex")
+        job_Links = cur.fetchall()
+        pages = len(job_Links)
+        page = 0
+        for link in job_Links:
+            page += 1
+            (job_Link, job_Id) = link
+            try:
+                print("剩余未采集的工作信息的数量：", pages - page)
+                job_Detial(job_Link)
+            except AttributeError as e:
+                print("错误原因：", e)
+                print('未保存的工作信息的链接是：', job_Link)
+                link_Error.add(job_Link)
+    finally:
+        conn.commit()
+        count = 0
+        while len(link_Error) != 0:
+            count += 1
+            relink_Error.update(link_Error)
+            print("需要重新采集的错误日志:", relink_Error)
+            link_Error.clear()
+            for j in relink_Error:
                 try:
-                    print("剩余未采集的工作信息的数量：", pages - page)
-                    job_Detial(job_Link)
-                except AttributeError as e:
-                    print("错误原因：", e)
-                    print('未保存的工作信息的链接是：', job_Link)
-                    link_Error.add(job_Link)
-        finally:
-            conn.commit()
-            count = 0
-            while len(link_Error) != 0:
-                count += 1
-                relink_Error.update(link_Error)
-                print("需要重新采集的错误日志:", relink_Error)
-                link_Error.clear()
-                for j in relink_Error:
-                    try:
-                        job_Detial(j)
-                    except Exception as e:
-                        print('重新采集不成功，计入错误文档，错误原因：', e)
-                        link_Error.add(j)
-                if count == 4:
-                    print('仍未采集的记录数量：', len(link_Error))
-                    break
-            with open('error.txt', 'wt')as f:
-                f.write('本次程序运行的日期：%s' % str(datetime.date.today()))
+                    job_Detial(j)
+                except Exception as e:
+                    print('重新采集不成功，计入错误文档，错误原因：', e)
+                    link_Error.add(j)
+            if count == 4:
+                print('仍未采集的记录数量：', len(link_Error))
+                break
+        with open('error.txt', 'wt')as f:
+            f.write('本次程序运行的日期：%s' % str(datetime.date.today()))
+            f.write('\n')
+            for j in link_Error:
+                f.write('未进行采集的工作链接:%s' % str(j))
                 f.write('\n')
-                for j in link_Error:
-                    f.write('未进行采集的工作链接:%s' % str(j))
-                    f.write('\n')
 
-    # if selection=="3":
-        job_AverWage()
-        print('平均工资计算完毕')
+    job_AverWage()
+    print('平均工资计算完毕')
 
-    # if selection=="4":
-        coordinate()
-        print('工作地点的坐标计算完毕')
+    coordinate()
+    print('工作地点的坐标计算完毕')
 
-    # if selection=="5":
-        distance(homeAddress, homeCity)
-        print('工作直线距离计算完毕')
+    distance(homeAddress, homeCity)
+    print('工作直线距离计算完毕')
 
-    # if selection=="6":
-        date_time = []
-        for i in range(2):
-            a = datetime.date.today() - datetime.timedelta(days=i)
-            a = str(a)
-            date_time.append(a)
-        date_time = tuple(date_time)
-        print(date_time)
-        cur.execute("DROP TABLE if exists job_Detail")
-        cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
-        cur.execute(
-            "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (job_AverWage>=6000 or job_AverWage='') and (company_Duration<=3600 or company_Duration='') and (job_Issue in {0})".format(date_time))
-        result = cur.fetchall()
-        cur.execute(
-            "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
-        title = cur.fetchall()
-        with codecs.open("job_Detail.csv", "w", encoding="utf_8_sig") as f:
-            f_csv = csv.writer(f)
-            f_csv.writerow(title)
-            f_csv.writerows(result)
-            print("文件生成完毕")
-        subject = "{0}的工作记录，辛苦宝宝鸡啦，请查收".format(datetime.date.today())
-        send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-                   'larkjoe@126.com', subject, '今天的工作邮件，请查收，最爱你的贝贝')
+    date_time = []
+    for i in range(2):
+        a = datetime.date.today() - datetime.timedelta(days=i)
+        a = str(a)
+        date_time.append(a)
+    date_time = tuple(date_time)
+    print(date_time)
+    cur.execute("DROP TABLE if exists job_Detail")
+    cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
+    cur.execute(
+        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (job_AverWage>=6000 or job_AverWage='') and (company_Duration<=3600 or company_Duration='') and (job_Issue in {0})".format(date_time))
+    result = cur.fetchall()
+    cur.execute(
+        "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
+    title = cur.fetchall()
+    with codecs.open("job_Detail.csv", "w", encoding="utf_8_sig") as f:
+        f_csv = csv.writer(f)
+        f_csv.writerow(title)
+        f_csv.writerows(result)
+        print("文件生成完毕")
+    subject = "{0}的工作记录，辛苦宝宝鸡啦，请查收".format(datetime.date.today())
+    send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
+               email, subject, '今天的工作邮件，请查收，最爱你的贝贝')
 
-    if selection == "8":
-        a = input("请输入所需要查询城市的编号：S-深圳，C-成都")
-        keyword = input("工作的关键字:")
-        if a == "S":
-            jobarea = '040000'  # 提供基本参数，广东030000，四川090000，省会编码是0200
-            homeCity = "深圳"
-        if a == "C":
-            jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
-            homeCity = "成都"
-        if input("是否需要更改住址(Y/N)") == "Y":
-            homeAddress = input("住址:")
-        pageno = 1
-        print("请确认信息：", jobarea, keyword, homeCity, homeAddress)
-        keyword_q = quote(keyword)
-        jobList_url = 'http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s' % (
-            jobarea, keyword_q, pageno)
-        print("修改完毕,新的网址为", jobList_url)
+jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
+keyword = '策划'
+homeAddress = '锦江区东风路4号一栋一单元'
+homeCity = "成都"
+email = 'larkjoe@126.com'
 
-    if selection == "9":
-        print("程序运行结束，谢谢使用")
-        break
+run(jobarea, keyword, homeAddress, homeCity, email)
