@@ -35,17 +35,17 @@ job_prototype = job_Info("", "", "", "", "", "")
 
 
 class job:
-    pageno = 1
-    job_list = []
-    link_Error = set()
-    relink_Error = set()
-    data = ()
 
     def __init__(self, jobarea, keyword, homeAddress, homeCity):
         self.jobarea = jobarea
         self.keyword = keyword
         self.homeAddress = homeAddress
         self.homeCity = homeCity
+        self.pageno = 1
+        self.job_list = []
+        self.link_Error = set()
+        self.relink_Error = set()
+        self.data = ()
 
     def job_Store(self):
         # 数据库设置
@@ -63,15 +63,18 @@ class job:
         try:
             cur.execute('CREATE TABLE work (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Name VARCHAR(200) ,job_Link VARCHAR(600),job_Wage VARCHAR(300),job_AverWage VARCHAR(200),company_Id VARCHAR(200),company_Name VARCHAR(200),company_Link VARCHAR(600),company_Nature VARCHAR(200),company_Scale VARCHAR(200),company_Area VARCHAR(400),company_Address VARCHAR(500),job_PeopleNum VARCHAR(400),job_Issue date,job_Article TEXT(20000),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))')
             cur.execute("CREATE TABLE workindex (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Link VARCHAR(600),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))")
+            print("数据库建立完毕")
         except (AttributeError, pymysql.err.InternalError):
             print('TABLE已经存在')
 
     def job_Reader(self):
         # 获取工作列表
+
         keyword_q = quote(self.keyword)
         while True:
             jobList_url = 'http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s' % (
-                self.jobarea, keyword_q, pageno)
+                self.jobarea, keyword_q, self.pageno
+            )
             while True:
                 try:
                     html = urlopen(jobList_url)
@@ -81,7 +84,7 @@ class job:
                         if BsObj.find("p", {"class": "no_record"}).get_text() == "暂无搜索记录":
                             print("全部记录搜索完毕,现在导入数据库")
                             sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
-                            n = cur.executemany(sql, job_list)
+                            n = cur.executemany(sql, self.job_list)
                             print("导入完毕，共生成记录:", n)
                             conn.commit()
                             return
@@ -98,10 +101,10 @@ class job:
                     job_Link = i.attrs["href"]
                     job_Id = re.search(re.compile("jobid=([0-9]+)$"), job_Link)
                     job_Id = job_Id.group(1)
-                    data = (job_Link, job_Id)
-                    job_list.append(data)
-            print("已经爬完的页数为：", pageno)
-            pageno += 1
+                    self.data = (job_Link, job_Id)
+                    self.job_list.append(self.data)
+            print("已经爬完的页数为：", self.pageno)
+            self.pageno += 1
 
 
 # 获取工作明细
@@ -348,8 +351,8 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
 def run(jobarea, keyword, homeAddress, homeCity, email):
     for i in keyword:
         work = job(jobarea, i, homeAddress, homeCity)
-        work.job_Reader()
         work.job_Store()
+        work.job_Reader()
     cur.execute(
         "create table test (select * from workindex group by job_Id order by row_id)")
     cur.execute("drop table workindex")
@@ -371,28 +374,28 @@ def run(jobarea, keyword, homeAddress, homeCity, email):
             except AttributeError as e:
                 print("错误原因：", e)
                 print('未保存的工作信息的链接是：', job_Link)
-                link_Error.add(job_Link)
+                self.link_Error.add(job_Link)
     finally:
         conn.commit()
         count = 0
-        while len(link_Error) != 0:
+        while len(self.link_Error) != 0:
             count += 1
-            relink_Error.update(link_Error)
-            print("需要重新采集的错误日志:", relink_Error)
-            link_Error.clear()
-            for j in relink_Error:
+            self.relink_Error.update(self.link_Error)
+            print("需要重新采集的错误日志:", self.relink_Error)
+            self.link_Error.clear()
+            for j in self.relink_Error:
                 try:
                     job_Detial(j)
                 except Exception as e:
                     print('重新采集不成功，计入错误文档，错误原因：', e)
-                    link_Error.add(j)
+                    self.link_Error.add(j)
             if count == 4:
-                print('仍未采集的记录数量：', len(link_Error))
+                print('仍未采集的记录数量：', len(self.link_Error))
                 break
         with open('error.txt', 'wt')as f:
             f.write('本次程序运行的日期：%s' % str(datetime.date.today()))
             f.write('\n')
-            for j in link_Error:
+            for j in self.link_Error:
                 f.write('未进行采集的工作链接:%s' % str(j))
                 f.write('\n')
 
