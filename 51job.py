@@ -47,29 +47,8 @@ class job:
         self.relink_Error = set()
         self.data = ()
 
-    def job_Store(self):
-        # 数据库设置
-        conn = pymysql.connect(host='127.0.0.1', port=3306,
-                               user='root', passwd='888888', db='mysql', charset='utf8')
-        cur = conn.cursor()
-
-        try:
-            cur.execute("DROP DATABASE job_CD")
-            cur.execute('CREATE DATABASE job_CD')
-        except Exception as e:
-            cur.execute('CREATE DATABASE job_CD')
-        cur.execute('USE job_CD')
-        # 建立数据库表格
-        try:
-            cur.execute('CREATE TABLE work (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Name VARCHAR(200) ,job_Link VARCHAR(600),job_Wage VARCHAR(300),job_AverWage VARCHAR(200),company_Id VARCHAR(200),company_Name VARCHAR(200),company_Link VARCHAR(600),company_Nature VARCHAR(200),company_Scale VARCHAR(200),company_Area VARCHAR(400),company_Address VARCHAR(500),job_PeopleNum VARCHAR(400),job_Issue date,job_Article TEXT(20000),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))')
-            cur.execute("CREATE TABLE workindex (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Link VARCHAR(600),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))")
-            print("数据库建立完毕")
-        except (AttributeError, pymysql.err.InternalError):
-            print('TABLE已经存在')
-
     def job_Reader(self):
         # 获取工作列表
-
         keyword_q = quote(self.keyword)
         while True:
             jobList_url = 'http://m.51job.com/search/joblist.php?jobarea=%s&keyword=%s&pageno=%s' % (
@@ -106,8 +85,9 @@ class job:
             print("已经爬完的页数为：", self.pageno)
             self.pageno += 1
 
-
 # 获取工作明细
+
+
 def job_Detial(link):
     start = time.clock()
     while True:
@@ -161,8 +141,8 @@ def job_Detial(link):
 
     # 将工作信息进行替代
 
-    def dict_to_job(s):
-        return job_prototype._replace(**s)
+def dict_to_job(s):
+    return job_prototype._replace(**s)
 
 # 计算工资的平均数
 
@@ -351,7 +331,6 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
 def run(jobarea, keyword, homeAddress, homeCity, email):
     for i in keyword:
         work = job(jobarea, i, homeAddress, homeCity)
-        work.job_Store()
         work.job_Reader()
     cur.execute(
         "create table test (select * from workindex group by job_Id order by row_id)")
@@ -437,5 +416,24 @@ keyword = '策划'
 homeAddress = '锦江区东风路4号一栋一单元'
 homeCity = "成都"
 email = 'larkjoe@126.com'
+
+# 数据库设置
+conn = pymysql.connect(host='127.0.0.1', port=3306,
+                       user='root', passwd='888888', db='mysql', charset='utf8')
+cur = conn.cursor()
+
+try:
+    cur.execute("DROP DATABASE job_CD")
+    cur.execute('CREATE DATABASE job_CD')
+except Exception as e:
+    cur.execute('CREATE DATABASE job_CD')
+cur.execute('USE job_CD')
+# 建立数据库表格
+try:
+    cur.execute('CREATE TABLE work (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Name VARCHAR(200) ,job_Link VARCHAR(600),job_Wage VARCHAR(300),job_AverWage VARCHAR(200),company_Id VARCHAR(200),company_Name VARCHAR(200),company_Link VARCHAR(600),company_Nature VARCHAR(200),company_Scale VARCHAR(200),company_Area VARCHAR(400),company_Address VARCHAR(500),job_PeopleNum VARCHAR(400),job_Issue date,job_Article TEXT(20000),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))')
+    cur.execute("CREATE TABLE workindex (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Link VARCHAR(600),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))")
+    print("数据库建立完毕")
+except (AttributeError, pymysql.err.InternalError):
+    print('TABLE已经存在')
 
 run(jobarea, keyword, homeAddress, homeCity, email)
