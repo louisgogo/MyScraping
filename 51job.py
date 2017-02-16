@@ -43,8 +43,6 @@ class job:
         self.homeCity = homeCity
         self.pageno = 1
         self.job_list = []
-        self.link_Error = set()
-        self.relink_Error = set()
         self.data = ()
 
     def job_Reader(self):
@@ -88,7 +86,7 @@ class job:
 # 获取工作明细
 
 
-def job_Detial(link):
+def job_Detial(link, job_Id):
     start = time.clock()
     while True:
         try:
@@ -133,13 +131,14 @@ def job_Detial(link):
             print("无法记录地址信息，错误原因:", e)
             company_Address = ""
     sql = "INSERT INTO work(job_Id,job_Name,job_Link,job_Wage,company_Id,company_Name,company_Link,company_Nature,company_Scale,company_Area,company_Address,job_PeopleNum,job_Issue,job_Article) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-    data = (job_Id, job_Name, job_Link, job_Wage, company_Id, company_Name, company_Link, company_Nature,
+    data = (job_Id, job_Name, link, job_Wage, company_Id, company_Name, company_Link, company_Nature,
             company_Scale, company_Area, company_Address, job_PeopleNum, job_Issue, job_Article)
     cur.execute(sql, data)
     end = time.clock()
     print("read: %f s" % (end - start))
 
     # 将工作信息进行替代
+
 
 def dict_to_job(s):
     return job_prototype._replace(**s)
@@ -340,6 +339,8 @@ def run(jobarea, keyword, homeAddress, homeCity, email):
     conn.commit()
 
     try:
+        link_Error = set()
+        relink_Error = set()
         cur.execute("SELECT job_Link,job_Id FROM workindex")
         job_Links = cur.fetchall()
         pages = len(job_Links)
@@ -349,32 +350,32 @@ def run(jobarea, keyword, homeAddress, homeCity, email):
             (job_Link, job_Id) = link
             try:
                 print("剩余未采集的工作信息的数量：", pages - page)
-                job_Detial(job_Link)
+                job_Detial(job_Link, job_Id)
             except AttributeError as e:
                 print("错误原因：", e)
                 print('未保存的工作信息的链接是：', job_Link)
-                self.link_Error.add(job_Link)
+                link_Error.add(job_Link，job_Id)
     finally:
         conn.commit()
         count = 0
-        while len(self.link_Error) != 0:
+        while len(link_Error) != 0:
             count += 1
-            self.relink_Error.update(self.link_Error)
-            print("需要重新采集的错误日志:", self.relink_Error)
-            self.link_Error.clear()
-            for j in self.relink_Error:
+            relink_Error.update(link_Error)
+            print("需要重新采集的错误日志:", relink_Error)
+            link_Error.clear()
+            for j in relink_Error:
                 try:
                     job_Detial(j)
                 except Exception as e:
                     print('重新采集不成功，计入错误文档，错误原因：', e)
-                    self.link_Error.add(j)
+                    link_Error.add(j)
             if count == 4:
-                print('仍未采集的记录数量：', len(self.link_Error))
+                print('仍未采集的记录数量：', len(link_Error))
                 break
         with open('error.txt', 'wt')as f:
             f.write('本次程序运行的日期：%s' % str(datetime.date.today()))
             f.write('\n')
-            for j in self.link_Error:
+            for j in link_Error:
                 f.write('未进行采集的工作链接:%s' % str(j))
                 f.write('\n')
 
