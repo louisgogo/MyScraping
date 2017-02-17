@@ -86,8 +86,9 @@ class job:
 # 获取工作明细
 
 
-def job_Detial(link, job_Id):
+def job_Detial(link):
     start = time.clock()
+    job_Id = re.search(re.compile("jobid=([0-9]+)$"), link)
     while True:
         try:
             html = urlopen(link)
@@ -350,11 +351,11 @@ def run(jobarea, keyword, homeAddress, homeCity, email):
             (job_Link, job_Id) = link
             try:
                 print("剩余未采集的工作信息的数量：", pages - page)
-                job_Detial(job_Link, job_Id)
+                job_Detial(job_Link)
             except AttributeError as e:
                 print("错误原因：", e)
                 print('未保存的工作信息的链接是：', job_Link)
-                link_Error.add(job_Link，job_Id)
+                link_Error.add(job_Link)
     finally:
         conn.commit()
         count = 0
