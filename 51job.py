@@ -88,7 +88,8 @@ class job:
 
 def job_Detial(link):
     start = time.clock()
-    job_Id = re.search(re.compile("jobid=([0-9]+)$"), link)
+    link = link[0]
+    job_Id = re.search(re.compile("jobid=([0-9]+)$"), link).group(1)
     while True:
         try:
             html = urlopen(link)
@@ -329,9 +330,9 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
 
 
 def run(jobarea, keyword, homeAddress, homeCity, email):
-    for i in keyword:
-        work = job(jobarea, i, homeAddress, homeCity)
-        work.job_Reader()
+    # for i in keyword:
+    work = job(jobarea, keyword, homeAddress, homeCity)
+    work.job_Reader()
     cur.execute(
         "create table test (select * from workindex group by job_Id order by row_id)")
     cur.execute("drop table workindex")
@@ -342,20 +343,19 @@ def run(jobarea, keyword, homeAddress, homeCity, email):
     try:
         link_Error = set()
         relink_Error = set()
-        cur.execute("SELECT job_Link,job_Id FROM workindex")
+        cur.execute("SELECT job_Link FROM workindex")
         job_Links = cur.fetchall()
         pages = len(job_Links)
         page = 0
         for link in job_Links:
             page += 1
-            (job_Link, job_Id) = link
             try:
                 print("剩余未采集的工作信息的数量：", pages - page)
-                job_Detial(job_Link)
+                job_Detial(link)
             except AttributeError as e:
                 print("错误原因：", e)
-                print('未保存的工作信息的链接是：', job_Link)
-                link_Error.add(job_Link)
+                print('未保存的工作信息的链接是：', link)
+                link_Error.add(link)
     finally:
         conn.commit()
         count = 0
