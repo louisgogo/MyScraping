@@ -36,11 +36,12 @@ job_prototype = job_Info("", "", "", "", "", "")
 
 class job:
 
-    def __init__(self, jobarea, keyword, homeAddress, homeCity):
+    def __init__(self, jobarea, keyword, homeAddress, homeCity, income):
         self.jobarea = jobarea
         self.keyword = keyword
         self.homeAddress = homeAddress
         self.homeCity = homeCity
+        self.income = income
         self.pageno = 1
         self.job_list = []
         self.data = ()
@@ -75,11 +76,27 @@ class job:
                     break
             for i in jobLinks:
                 if self.keyword in i.h3.get_text():
-                    job_Link = i.attrs["href"]
-                    job_Id = re.search(re.compile("jobid=([0-9]+)$"), job_Link)
-                    job_Id = job_Id.group(1)
-                    self.data = (job_Link, job_Id)
-                    self.job_list.append(self.data)
+                    try:
+                        if wage_Average(i.em.get_text()) >= self.income:
+                            print(i.em.get_text())
+                            print(wage_Average(i.em.get_text()))
+                            print(self.income)
+                            job_Link = i.attrs["href"]
+                            job_Id = re.search(re.compile(
+                                "jobid=([0-9]+)$"), job_Link)
+                            job_Id = job_Id.group(1)
+                            self.data = (job_Link, job_Id)
+                            self.job_list.append(self.data)
+                    except TypeError:
+                        print(i.em.get_text())
+                        print(wage_Average(i.em.get_text()))
+                        print(self.income)
+                        job_Link = i.attrs["href"]
+                        job_Id = re.search(re.compile(
+                            "jobid=([0-9]+)$"), job_Link)
+                        job_Id = job_Id.group(1)
+                        self.data = (job_Link, job_Id)
+                        self.job_list.append(self.data)
             print("已经爬完的页数为：", self.pageno)
             self.pageno += 1
 
@@ -150,15 +167,19 @@ def dict_to_job(s):
 
 def wage_Average(wage):
     try:
-        li = re.findall(re.compile("[0-9]+"), wage)
+        li = re.findall(re.compile('([0-9]\d*\.?\d*)'), wage)
         a = 0
         for i in range(0, len(li)):
-            a = int(li[i]) + a
+            a = float(li[i]) + a
         if wage.find('万') > 0:
             a = a * 10000
+        if wage.find('千') > 0:
+            a = a * 1000
         if wage.find('年') > 0:
             a = a / 12
-        avg = a / len(li)
+        if wage.find('天') > 0:
+            a = a * 20
+        avg = round(a / len(li), 2)
     except Exception:
         avg = ""
     return avg
@@ -329,10 +350,10 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
     email_client.quit()
 
 
-def run(jobarea, homeAddress, homeCity, email, *args):
+def run(jobarea, homeAddress, homeCity, email, income, *args):
     for i in args:
         print(i)
-        work = job(jobarea, i, homeAddress, homeCity)
+        work = job(jobarea, i, homeAddress, homeCity, income)
         work.job_Reader()
     cur.execute(
         "create table test (select * from workindex group by job_Id order by row_id)")
@@ -442,8 +463,9 @@ keyword3 = "品牌"
 homeAddress = '锦江区东风路4号一栋一单元'
 homeCity = "成都"
 email = 'larkjoe@126.com'
+income = int('8000')
 
-run(jobarea, homeAddress, homeCity, email, keyword1, keyword2, keyword3)
+run(jobarea, homeAddress, homeCity, email, income, keyword1, keyword2, keyword3)
 
 jobarea = '030000'  # 提供基本参数，广东030000，四川090000，省会编码是0200
 keyword1 = "审计"
@@ -452,5 +474,6 @@ keyword3 = "会计"
 homeAddress = '福田区竹子林三路竹盛花园'
 homeCity = "深圳"
 email = 'louse12345@163.com'
+income = int('8000')
 
-run(jobarea, homeAddress, homeCity, email, keyword1, keyword2, keyword3)
+run(jobarea, homeAddress, homeCity, email, income, keyword1, keyword2, keyword3)
