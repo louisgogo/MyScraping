@@ -74,7 +74,7 @@ class job:
                 else:
                     break
             for i in jobLinks:
-                if keyword in i.h3.get_text():
+                if self.keyword in i.h3.get_text():
                     job_Link = i.attrs["href"]
                     job_Id = re.search(re.compile("jobid=([0-9]+)$"), job_Link)
                     job_Id = job_Id.group(1)
@@ -329,8 +329,9 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
     email_client.quit()
 
 
-def run(jobarea, keyword, homeAddress, homeCity, email):
-    for i in keyword:
+def run(jobarea, homeAddress, homeCity, email, *args):
+    for i in args:
+        print(i)
         work = job(jobarea, i, homeAddress, homeCity)
         work.job_Reader()
     cur.execute(
@@ -409,16 +410,12 @@ def run(jobarea, keyword, homeAddress, homeCity, email):
         f_csv.writerow(title)
         f_csv.writerows(result)
         print("文件生成完毕")
-    subject = "{0}的工作记录，辛苦宝宝鸡啦，请查收".format(datetime.date.today())
+    subject1 = "{0}的工作记录，辛苦宝宝鸡啦，请查收".format(datetime.date.today())
+    subject2 = "{0}的工作记录备份，请查收".format(datetime.date.today())
     send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-               email, subject, '今天的工作邮件，请查收，最爱你的贝贝')
-
-jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
-keyword = ('策划',''
-homeAddress = '锦江区东风路4号一栋一单元'
-homeCity = "成都"
-email = 'larkjoe@126.com'
-
+               email, subject1, '今天的工作邮件，请查收，最爱你的贝贝')
+    send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
+               'louse12345@163.com', subject2, '工作邮件的备份资料')
 # 数据库设置
 conn = pymysql.connect(host='127.0.0.1', port=3306,
                        user='root', passwd='888888', db='mysql', charset='utf8')
@@ -438,4 +435,22 @@ try:
 except (AttributeError, pymysql.err.InternalError):
     print('TABLE已经存在')
 
-run(jobarea, keyword, homeAddress, homeCity, email)
+jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
+keyword1 = "策划"
+keyword2 = "运营"
+keyword3 = "品牌"
+homeAddress = '锦江区东风路4号一栋一单元'
+homeCity = "成都"
+email = 'larkjoe@126.com'
+
+run(jobarea, homeAddress, homeCity, email, keyword1, keyword2, keyword3)
+
+jobarea = '030000'  # 提供基本参数，广东030000，四川090000，省会编码是0200
+keyword1 = "审计"
+keyword2 = "财务"
+keyword3 = "会计"
+homeAddress = '福田区竹子林三路竹盛花园'
+homeCity = "深圳"
+email = 'louse12345@163.com'
+
+run(jobarea, homeAddress, homeCity, email, keyword1, keyword2, keyword3)
