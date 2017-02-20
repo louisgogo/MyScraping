@@ -330,9 +330,9 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
 
 
 def run(jobarea, keyword, homeAddress, homeCity, email):
-    # for i in keyword:
-    work = job(jobarea, keyword, homeAddress, homeCity)
-    work.job_Reader()
+    for i in keyword:
+        work = job(jobarea, i, homeAddress, homeCity)
+        work.job_Reader()
     cur.execute(
         "create table test (select * from workindex group by job_Id order by row_id)")
     cur.execute("drop table workindex")
@@ -414,7 +414,7 @@ def run(jobarea, keyword, homeAddress, homeCity, email):
                email, subject, '今天的工作邮件，请查收，最爱你的贝贝')
 
 jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
-keyword = '策划'
+keyword = ('策划',''
 homeAddress = '锦江区东风路4号一栋一单元'
 homeCity = "成都"
 email = 'larkjoe@126.com'
