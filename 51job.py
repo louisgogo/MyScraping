@@ -431,10 +431,18 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
         f_csv.writerow(title)
         f_csv.writerows(result)
         print("文件生成完毕")
-    send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-               email, subject, '今天的工作邮件，请查收，最爱你的贝贝')
-    send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-               'louse12345@163.com', subject, '工作邮件的备份资料')
+    while True:
+        try:
+            send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
+                       email, subject, '今天的工作邮件，请查收，最爱你的贝贝')
+            send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
+                       'louse12345@163.com', subject, '工作邮件的备份资料')
+        except Exception as e:
+            print('发生邮件错误，错误原因为:',e)
+        else:
+            print("邮件发送成功")
+            break
+
 # 数据库设置
 conn = pymysql.connect(host='127.0.0.1', port=3306,
                        user='root', passwd='888888', db='mysql', charset='utf8')
@@ -464,8 +472,8 @@ email = 'larkjoe@126.com'
 income = int('7000')
 subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
 
-#run(jobarea, homeAddress, homeCity, email,
-#    income, subject, keyword1, keyword2, keyword3)
+run(jobarea, homeAddress, homeCity, email,
+    income, subject, keyword1, keyword2, keyword3)
 
 jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
 keyword1 = "审计"

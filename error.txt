@@ -1,6 +1,2 @@
 本次程序运行的日期：2017-02-21
-未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=74730893',)
-未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=83979954',)
-未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=77081137',)
-未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=86001899',)
-未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=84398242',)
+未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=74664357',)
