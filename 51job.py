@@ -350,7 +350,7 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
     email_client.quit()
 
 
-def run(jobarea, homeAddress, homeCity, email, income, *args):
+def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     for i in args:
         print(i)
         work = job(jobarea, i, homeAddress, homeCity, income)
@@ -431,12 +431,10 @@ def run(jobarea, homeAddress, homeCity, email, income, *args):
         f_csv.writerow(title)
         f_csv.writerows(result)
         print("文件生成完毕")
-    subject1 = "{0}的工作记录，辛苦宝宝鸡啦，请查收".format(datetime.date.today())
-    subject2 = "{0}的工作记录备份，请查收".format(datetime.date.today())
     send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-               email, subject1, '今天的工作邮件，请查收，最爱你的贝贝')
+               email, subject, '今天的工作邮件，请查收，最爱你的贝贝')
     send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-               'louse12345@163.com', subject2, '工作邮件的备份资料')
+               'louse12345@163.com', subject, '工作邮件的备份资料')
 # 数据库设置
 conn = pymysql.connect(host='127.0.0.1', port=3306,
                        user='root', passwd='888888', db='mysql', charset='utf8')
@@ -463,11 +461,13 @@ keyword3 = "品牌"
 homeAddress = '锦江区东风路4号一栋一单元'
 homeCity = "成都"
 email = 'larkjoe@126.com'
-income = int('8000')
+income = int('7000')
+subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
 
-run(jobarea, homeAddress, homeCity, email, income, keyword1, keyword2, keyword3)
+#run(jobarea, homeAddress, homeCity, email,
+#    income, subject, keyword1, keyword2, keyword3)
 
-jobarea = '030000'  # 提供基本参数，广东030000，四川090000，省会编码是0200
+jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
 keyword1 = "审计"
 keyword2 = "财务"
 keyword3 = "会计"
@@ -475,5 +475,7 @@ homeAddress = '福田区竹子林三路竹盛花园'
 homeCity = "深圳"
 email = 'louse12345@163.com'
 income = int('8000')
+subject = "肥肥-{0}的工作记录，请查收".format(datetime.date.today())
 
-run(jobarea, homeAddress, homeCity, email, income, keyword1, keyword2, keyword3)
+run(jobarea, homeAddress, homeCity, email,
+    income, subject, keyword1, keyword2, keyword3)
