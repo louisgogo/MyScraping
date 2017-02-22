@@ -438,7 +438,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
             send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
                        'louse12345@163.com', subject, '工作邮件的备份资料')
         except Exception as e:
-            print('发生邮件错误，错误原因为:',e)
+            print('发生邮件错误，错误原因为:', e)
         else:
             print("邮件发送成功")
             break
@@ -448,20 +448,23 @@ conn = pymysql.connect(host='127.0.0.1', port=3306,
                        user='root', passwd='888888', db='mysql', charset='utf8')
 cur = conn.cursor()
 
-try:
-    cur.execute("DROP DATABASE job_CD")
-    cur.execute('CREATE DATABASE job_CD')
-except Exception as e:
-    cur.execute('CREATE DATABASE job_CD')
-cur.execute('USE job_CD')
-# 建立数据库表格
-try:
-    cur.execute('CREATE TABLE work (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Name VARCHAR(200) ,job_Link VARCHAR(600),job_Wage VARCHAR(300),job_AverWage VARCHAR(200),company_Id VARCHAR(200),company_Name VARCHAR(200),company_Link VARCHAR(600),company_Nature VARCHAR(200),company_Scale VARCHAR(200),company_Area VARCHAR(400),company_Address VARCHAR(500),job_PeopleNum VARCHAR(400),job_Issue date,job_Article TEXT(20000),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))')
-    cur.execute("CREATE TABLE workindex (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Link VARCHAR(600),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))")
-    print("数据库建立完毕")
-except (AttributeError, pymysql.err.InternalError):
-    print('TABLE已经存在')
 
+def store():
+    try:
+        cur.execute("DROP DATABASE job_CD")
+        cur.execute('CREATE DATABASE job_CD')
+    except Exception as e:
+        cur.execute('CREATE DATABASE job_CD')
+    cur.execute('USE job_CD')
+    # 建立数据库表格
+    try:
+        cur.execute('CREATE TABLE work (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Name VARCHAR(200) ,job_Link VARCHAR(600),job_Wage VARCHAR(300),job_AverWage VARCHAR(200),company_Id VARCHAR(200),company_Name VARCHAR(200),company_Link VARCHAR(600),company_Nature VARCHAR(200),company_Scale VARCHAR(200),company_Area VARCHAR(400),company_Address VARCHAR(500),job_PeopleNum VARCHAR(400),job_Issue date,job_Article TEXT(20000),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))')
+        cur.execute("CREATE TABLE workindex (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Link VARCHAR(600),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))")
+        print("数据库建立完毕")
+    except (AttributeError, pymysql.err.InternalError):
+        print('TABLE已经存在')
+
+store()
 jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
 keyword1 = "策划"
 keyword2 = "运营"
@@ -475,6 +478,7 @@ subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today(
 run(jobarea, homeAddress, homeCity, email,
     income, subject, keyword1, keyword2, keyword3)
 
+store()
 jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
 keyword1 = "审计"
 keyword2 = "财务"
