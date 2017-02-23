@@ -270,7 +270,7 @@ def getDistance_and_Duration(lon1, lat1, lon2, lat2):
 
 def coordinate():
     cur.execute("DROP TABLE if exists company")
-    cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('50-150人','少于50人') GROUP BY company_id,company_Address)")
+    cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('150-500人','50-150人','少于50人') GROUP BY company_id,company_Address)")
     cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
     cur.execute(
         "SELECT company_Id,company_Area,company_Address FROM company WHERE company_x is null")
@@ -412,7 +412,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     print('工作直线距离计算完毕')
 
     date_time = []
-    for i in range(2):
+    for i in range(1):
         a = datetime.date.today() - datetime.timedelta(days=i)
         a = str(a)
         date_time.append(a)
@@ -421,7 +421,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     cur.execute("DROP TABLE if exists job_Detail")
     cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
     cur.execute(
-        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (job_AverWage>=6000 or job_AverWage='') and (company_Duration<=3600 or company_Duration='') and (job_Issue in {0})".format(date_time))
+        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (company_Duration<=2400 or company_Duration='') and (job_Issue in {0})".format(date_time))
     result = cur.fetchall()
     cur.execute(
         "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
@@ -472,7 +472,7 @@ keyword3 = "品牌"
 homeAddress = '锦江区东风路4号一栋一单元'
 homeCity = "成都"
 email = 'larkjoe@126.com'
-income = int('7000')
+income = int('6000')
 subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
 
 run(jobarea, homeAddress, homeCity, email,
