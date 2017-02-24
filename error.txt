@@ -1,1 +1,4 @@
-本次程序运行的日期：2017-02-23
+本次程序运行的日期：2017-02-24
+未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=85584100',)
+未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=84009064',)
+未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=46139487',)

@@ -421,7 +421,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     cur.execute("DROP TABLE if exists job_Detail")
     cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
     cur.execute(
-        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (company_Duration<=3600 or company_Duration='') and (job_Issue in {0})".format(date_time))
+        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (company_Duration<=2400 or company_Duration='') and (job_Issue in {0})".format(date_time))
     result = cur.fetchall()
     cur.execute(
         "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
@@ -435,6 +435,13 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
         try:
             send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
                        email, subject, '今天的工作邮件，请查收，最爱你的贝贝')
+        except Exception as e:
+            print('发生邮件错误，错误原因为:', e)
+        else:
+            print("邮件发送成功")
+            break
+    while True:
+        try:
             send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
                        'louse12345@163.com', subject, '工作邮件的备份资料')
         except Exception as e:
