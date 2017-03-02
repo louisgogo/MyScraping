@@ -73,23 +73,18 @@ class job:
                 else:
                     break
             for i in jobLinks:
-                print(i)
-                print(i.div)
-                print(i.div[1].get_text())
-                if self.keyword in i.div[0].get_text():
+                if self.keyword in re.search(re.compile('<div class="jobname">(.+)</div>'), str(i)).group(1):
                     try:
-                        if wage_Average(i.div[4].get_text()) >= self.income:
-                            print(wage_Average(i.div[4].get_text()))
-                            print(self.income)
+                        if wage_Average(re.search(re.compile('<div class="salary">(.+)</div>'), str(i)).group(1)) >= self.income:
+                            print(re.search(re.compile('<div class="jobname">(.+)</div>'), str(i)).group(1))
+                            print(wage_Average(re.search(re.compile('<div class="salary">(.+)</div>'), str(i)).group(1)))
                             job_Link = i.attrs["href"]
                             job_Id = re.search(re.compile(
-                                "(cc.+)/$"), job_Link)
+                                "job/(.+)/$"), job_Link)
                             job_Id = job_Id.group(1)
                             self.data = (job_Link, job_Id)
                             self.job_list.append(self.data)
                     except TypeError:
-                        print(wage_Average(i.div[4].get_text()))
-                        print(self.income)
                         job_Link = i.attrs["href"]
                         job_Id = re.search(re.compile(
                             "(cc.+)/$"), job_Link)
