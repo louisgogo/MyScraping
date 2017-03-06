@@ -42,8 +42,26 @@ class job:
     def job_Reader(self):
         # 获取工作列表
         keyword_q = quote(self.keyword)
-        repile1 = re.compile('(.*元.*)')
-        repile2 = re.compile("job/(.+)/$")
+        repile1 = re.compile('(.*?元/.+?)')
+        repile2 = re.compile("job/(.+?)/")
+        while True:
+            try:
+                jobList_url = 'http://m.zhaopin.com/%s/?keyword=%s&pageindex=%s' % (
+                    self.jobarea, keyword_q, self.pageno)
+                html = urlopen(jobList_url)
+                BsObj = BeautifulSoup(html, 'html.parser')
+                html.close()
+                lastpageno = BsObj.findAll("a", {'rel': 'nofollow'})
+                lastpageno = lastpageno[2].attrs['href']
+                print(lastpageno)
+                lastpageno = re.search(re.compile(
+                    "pageindex=(.*?)&"), lastpageno).group(1)
+                lastpageno = int(lastpageno) - 800
+                print(lastpageno)
+            except Exception as e:
+                print("网页读取，重新载入", e)
+            else:
+                break
         while True:
             jobList_url = 'http://m.zhaopin.com/%s/?keyword=%s&pageindex=%s' % (
                 self.jobarea, keyword_q, self.pageno
@@ -52,11 +70,9 @@ class job:
                 try:
                     html = urlopen(jobList_url)
                     BsObj = BeautifulSoup(html, 'html.parser')
-                    # lastPageno = BsObj.find("div", {"class":
-                    # "j_page"}).findAll("a",{"rel":"nofollow"})
                     html.close()
                     try:
-                        if BsObj.find("section", {"class": "othermore"}):
+                        if self.pageno == lastpageno:
                             print("全部记录搜索完毕,现在导入数据库")
                             print(jobList_url)
                             sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
@@ -83,7 +99,9 @@ class job:
                             self.data = (job_Link, job_Id)
                             self.job_list.append(self.data)
                             print(job_Link, job_Id)
-                    except TypeError:
+                    except Exception as e:
+                        print(e)
+                        print(i.get_text())
                         job_Link = i.attrs["href"]
                         job_Id = re.search(repile2, job_Link)
                         job_Id = job_Id.group(1)
@@ -116,7 +134,7 @@ def job_Detial(link):
     company_Name = BsObj.find("div", {"class": 'r_jobdetails'}).h2.get_text()
     job_Article = BsObj.find('article').get_text()
     # 对工作内容进行格式化
-    job_Article = re.sub(re.compile("[%|' '|\t|\r|\n]*?"), "", job_Article)
+    job_Article = re.sub(re.compile("[^\u4e00-\u9fa5]"), "", job_Article)
     company_Link = 'http://m.zhaopin.com' + \
         BsObj.find('div', {"class": "r_jobdetails"}).find("a").attrs["href"]
     company_Id = re.search(re.compile("company/(.+)/$"), company_Link).group(1)
@@ -133,26 +151,25 @@ def job_Detial(link):
         "日期(.*)"), job_Information).group(1)
     print(job_Wage, job_PeopleNum, job_Issue, company_Area)
     # 记录地址信息
-    try:
-        html = urlopen(company_Link)
-        BsObj_Add = BeautifulSoup(html, "html.parser")
-        job_Information = BsObj_Add.find(
-            "ul", {"class": "companyshadow"}).get_text()
-        company_Address = re.search(re.compile(
-            "公司地址(.*)"), job_Information).group(1)
-        company_Nature = re.search(re.compile(
-            "企业性质(.*)"), job_Information).group(1)
-        company_Scale = re.search(re.compile(
-            "规模(.*)"), job_Information).group(1)
-        html.close()
-    except Exception as e:
-        print('未记录到地址信息', e)
+    while True:
         try:
-            company_Address = BsObj.find(
-                "div", {"class": "area dicons_before"}).get_text()
+            html = urlopen(company_Link)
+            BsObj_Add = BeautifulSoup(html, "html.parser")
+            job_Information = BsObj_Add.find(
+                "ul", {"class": "companyshadow"}).get_text()
+            company_Address = re.search(re.compile(
+                "公司地址(.*)"), job_Information).group(1)
+            company_Address = re.sub(re.compile(
+                "[^\u4e00-\u9fa5]"), "", company_Address)
+            company_Nature = re.search(re.compile(
+                "企业性质(.*)"), job_Information).group(1)
+            company_Scale = re.search(re.compile(
+                "规模(.*)"), job_Information).group(1)
+            html.close()
         except Exception as e:
-            print("无法记录地址信息，错误原因:", e)
-            company_Address = ""
+            print('未记录到地址信息', e)
+        else:
+            break
     sql = "INSERT INTO work(job_Id,job_Name,job_Link,job_Wage,company_Id,company_Name,company_Link,company_Nature,company_Scale,company_Area,company_Address,job_PeopleNum,job_Issue,job_Article) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
     data = (job_Id, job_Name, link, job_Wage, company_Id, company_Name, company_Link, company_Nature,
             company_Scale, company_Area, company_Address, job_PeopleNum, job_Issue, job_Article)
@@ -167,15 +184,15 @@ def wage_Average(wage):
     try:
         li = re.findall(re.compile('([0-9]\d*\.?\d*)'), wage)
         a = 0
-        for i in range(0, len(li)):
-            a = float(li[i]) + a
+        for i in li:
+            a = float(i) + a
         if wage.find('万') > 0:
             a = a * 10000
         if wage.find('千') > 0:
             a = a * 1000
         if wage.find('年') > 0:
             a = a / 12
-        if wage.find('天') > 0:
+        if wage.find('/天') > 0:
             a = a * 20
         avg = round(a / len(li), 2)
     except Exception:
@@ -278,7 +295,6 @@ def coordinate():
         count = 0
         (company_Id, company_Area, company_Address) = i
         city = company_Area[0:2]
-        print(city + "," + company_Address)
         while True:
             try:
                 count += 1
@@ -290,7 +306,6 @@ def coordinate():
                     print("地址不准确，按照公司名称查找坐标")
                 else:
                     (lng, lat) = getAddress(company_Address, city)
-                    print(lng, lat)
             except AttributeError:
                 print('对象丢失，重新寻找')
                 company_Address = ''

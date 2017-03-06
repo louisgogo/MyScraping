@@ -6,16 +6,26 @@ jobList_url = 'http://m.zhaopin.com/job/cc226035412j90250096000/'
 html = urlopen(jobList_url)
 BsObj = BeautifulSoup(html, 'html.parser')
 html.close()
-job_Information = BsObj.find("div", {"class": 'wrap'}).get_text()
-print(job_Information)
-job_Wage = re.search(re.compile(
-    "薪水(.*)"), job_Information).group(1)
-company_Area = re.search(re.compile(
-    "城市(.*)"), job_Information).group(1)
-job_PeopleNum = re.search(re.compile(
-    "人数(.*)"), job_Information).group(1)
-job_Issue = re.search(re.compile(
-    "日期(.*)"), job_Information).group(1)
-print(job_Wage, job_PeopleNum, job_Issue, company_Area)
-print(BsObj.find("div", {"class": 'r_jobdetails'}).h2.get_text())
-print(str(datetime.datetime.now().year) + '-')
+
+
+def wage_Average(wage):
+    try:
+        li = re.findall(re.compile('([0-9]\d*\.?\d*)'), wage)
+        a = 0
+        for i in li:
+            a = float(i) + a
+            print(a)
+        if wage.find('万') > 0:
+            a = a * 10000
+        if wage.find('千') > 0:
+            a = a * 1000
+        if wage.find('年') > 0:
+            a = a / 12
+        if wage.find('/天') > 0:
+            a = a * 20
+        avg = round(a / len(li), 2)
+    except Exception:
+        avg = ""
+    return avg
+
+print(wage_Average('4000-8000元/月'))
