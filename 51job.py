@@ -78,9 +78,6 @@ class job:
                 if self.keyword in i.h3.get_text():
                     try:
                         if wage_Average(i.em.get_text()) >= self.income:
-                            print(i.em.get_text())
-                            print(wage_Average(i.em.get_text()))
-                            print(self.income)
                             job_Link = i.attrs["href"]
                             job_Id = re.search(re.compile(
                                 "jobid=([0-9]+)$"), job_Link)
@@ -88,9 +85,6 @@ class job:
                             self.data = (job_Link, job_Id)
                             self.job_list.append(self.data)
                     except TypeError:
-                        print(i.em.get_text())
-                        print(wage_Average(i.em.get_text()))
-                        print(self.income)
                         job_Link = i.attrs["href"]
                         job_Id = re.search(re.compile(
                             "jobid=([0-9]+)$"), job_Link)

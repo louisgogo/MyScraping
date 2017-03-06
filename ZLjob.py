@@ -42,6 +42,8 @@ class job:
     def job_Reader(self):
         # 获取工作列表
         keyword_q = quote(self.keyword)
+        repile1 = re.compile('(.*元.*)')
+        repile2 = re.compile("job/(.+)/$")
         while True:
             jobList_url = 'http://m.zhaopin.com/%s/?keyword=%s&pageindex=%s' % (
                 self.jobarea, keyword_q, self.pageno
@@ -50,17 +52,13 @@ class job:
                 try:
                     html = urlopen(jobList_url)
                     BsObj = BeautifulSoup(html, 'html.parser')
+                    # lastPageno = BsObj.find("div", {"class":
+                    # "j_page"}).findAll("a",{"rel":"nofollow"})
                     html.close()
                     try:
                         if BsObj.find("section", {"class": "othermore"}):
                             print("全部记录搜索完毕,现在导入数据库")
-                            sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
-                            n = cur.executemany(sql, self.job_list)
-                            print("导入完毕，共生成记录:", n)
-                            conn.commit()
-                            return
-                        if BsObj.find("div", {"class": "contmain imgicon"}):
-                            print("全部记录搜索完毕,现在导入数据库")
+                            print(jobList_url)
                             sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
                             n = cur.executemany(sql, self.job_list)
                             print("导入完毕，共生成记录:", n)
@@ -75,24 +73,24 @@ class job:
                 else:
                     break
             for i in jobLinks:
-                if self.keyword in re.search(re.compile('<div class="jobname">(.+)</div>'), str(i)).group(1):
+                if self.keyword in i.get_text():
                     try:
-                        if wage_Average(re.search(re.compile('<div class="salary">(.+)</div>'), str(i)).group(1)) >= self.income:
+                        if wage_Average(re.search(repile1, i.get_text()).group(1)) >= self.income:
                             job_Link = i.attrs["href"]
-                            job_Id = re.search(re.compile(
-                                "job/(.+)/$"), job_Link)
+                            job_Id = re.search(repile2, job_Link)
                             job_Id = job_Id.group(1)
                             job_Link = 'http://m.zhaopin.com' + job_Link
                             self.data = (job_Link, job_Id)
                             self.job_list.append(self.data)
+                            print(job_Link, job_Id)
                     except TypeError:
                         job_Link = i.attrs["href"]
-                        job_Id = re.search(re.compile(
-                            "(cc.+)/$"), job_Link)
+                        job_Id = re.search(repile2, job_Link)
                         job_Id = job_Id.group(1)
                         job_Link = 'http://m.zhaopin.com' + job_Link
                         self.data = (job_Link, job_Id)
                         self.job_list.append(self.data)
+                        print(job_Link, job_Id)
             print("已经爬完的页数为：", self.pageno)
             self.pageno += 1
 
@@ -272,6 +270,7 @@ def coordinate():
     cur.execute("DROP TABLE if exists company")
     cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('50-150人','少于50人') GROUP BY company_id,company_Address)")
     cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
+    cur.execute("ALTER TABLE company ADD primary key(company_Id)")
     cur.execute(
         "SELECT company_Id,company_Area,company_Address FROM company WHERE company_x is null")
     result = cur.fetchall()
@@ -298,11 +297,12 @@ def coordinate():
             else:
                 break
         try:
-            cur.execute('UPDATE company SET company_x={0},company_y={1} WHERE company_Id={2}'.format(
+            print(str(lng), str(lat), company_Id)
+            cur.execute("UPDATE company SET company_x='{0}',company_y='{1}' WHERE company_Id='{2}'".format(
                 str(lng), str(lat), company_Id))
         except Exception as e:
             print("错误原因：", e)
-            cur.execute('UPDATE company SET company_x={0},company_y={1} WHERE company_Id={2}'.format(
+            cur.execute("UPDATE company SET company_x='{0}',company_y='{1}' WHERE company_Id='{2}'".format(
                 "", "", company_Id))
     conn.commit()
 
@@ -483,9 +483,9 @@ income = int('6000')
 subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
 
 run(jobarea, homeAddress, homeCity, email,
-    income, subject, keyword3)
+    income, subject, keyword1)
 
-store()
+# store()
 # jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
 # keyword1 = "审计"
 # keyword2 = "财务"
