@@ -21,6 +21,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 import smtplib
+import os
 
 # 初始设置
 timeout = 20
@@ -134,7 +135,8 @@ def job_Detial(link):
     company_Name = BsObj.find("div", {"class": 'r_jobdetails'}).h2.get_text()
     job_Article = BsObj.find('article').get_text()
     # 对工作内容进行格式化
-    job_Article = re.sub(re.compile("[^\u4e00-\u9fa5]"), "", job_Article)
+    job_Article = re.sub(re.compile(
+        "[\u4e00-\u9fa5]|[\（\）\《\》\——\；\，\。\“\”\<\>\！]"), "", job_Article)
     company_Link = 'http://m.zhaopin.com' + \
         BsObj.find('div', {"class": "r_jobdetails"}).find("a").attrs["href"]
     company_Id = re.search(re.compile("company/(.+)/$"), company_Link).group(1)
@@ -498,7 +500,10 @@ income = int('6000')
 subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
 
 run(jobarea, homeAddress, homeCity, email,
-    income, subject, keyword1)
+    income, subject, keyword1, keyword2, keyword3)
+
+command = 'shutdown -s -t 60'
+os.system(command)
 
 # store()
 # jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
