@@ -116,7 +116,8 @@ def job_Detial(link):
     company_Name = BsObj.find("a", {"class": 'xqa'}).get_text()
     job_Article = BsObj.find('article').get_text()
     # 对工作内容进行格式化
-    job_Article = re.sub(re.compile("[%|' '|\t|\r|\n]*?"), "", job_Article)
+    job_Article = re.sub(re.compile(
+        "[\u4e00-\u9fa5]|[\（\）\《\》\——\；\，\。\“\”\<\>\！]"), "", job_Article)
     company_Link = BsObj.find('div', {"class": "xq"}).find("a").attrs["href"]
     company_Id = re.search(re.compile("coid=([0-9]+)$"), company_Link)
     company_Id = company_Id.group(1)
@@ -443,6 +444,8 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
         else:
             print("邮件发送成功")
             break
+    cur.close()
+    conn.close()
 
 # 数据库设置
 conn = pymysql.connect(host='127.0.0.1', port=3306,

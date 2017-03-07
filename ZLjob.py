@@ -22,6 +22,7 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header
 import smtplib
 import os
+import requests
 
 # 初始设置
 timeout = 20
@@ -45,19 +46,25 @@ class job:
         keyword_q = quote(self.keyword)
         repile1 = re.compile('(.*?元/.+?)')
         repile2 = re.compile("job/(.+?)/")
+        headers = {
+            'Host': 'm.zhaopin.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+            'Accept': 'text/css,*/*;q=0.1',
+            'Connection': 'keep-alive',
+            'Referer': 'http://m.zhaopin.com/'
+        }
         while True:
             try:
                 jobList_url = 'http://m.zhaopin.com/%s/?keyword=%s&pageindex=%s' % (
                     self.jobarea, keyword_q, self.pageno)
-                html = urlopen(jobList_url)
+                html = requests.get(jobList_url, headers=headers).text
                 BsObj = BeautifulSoup(html, 'html.parser')
-                html.close()
                 lastpageno = BsObj.findAll("a", {'rel': 'nofollow'})
                 lastpageno = lastpageno[2].attrs['href']
                 print(lastpageno)
                 lastpageno = re.search(re.compile(
                     "pageindex=(.*?)&"), lastpageno).group(1)
-                lastpageno = int(lastpageno) - 800
+                lastpageno = int(lastpageno) - 50
                 print(lastpageno)
             except Exception as e:
                 print("网页读取，重新载入", e)
@@ -67,26 +74,28 @@ class job:
             jobList_url = 'http://m.zhaopin.com/%s/?keyword=%s&pageindex=%s' % (
                 self.jobarea, keyword_q, self.pageno
             )
+            # error_Count负责控制重复采集的次数
+            error_Count = 0
             while True:
                 try:
-                    html = urlopen(jobList_url)
+                    html = requests.get(jobList_url, headers=headers).text
                     BsObj = BeautifulSoup(html, 'html.parser')
-                    html.close()
-                    try:
-                        if self.pageno == lastpageno:
-                            print("全部记录搜索完毕,现在导入数据库")
-                            print(jobList_url)
-                            sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
-                            n = cur.executemany(sql, self.job_list)
-                            print("导入完毕，共生成记录:", n)
-                            conn.commit()
-                            return
-                    except:
-                        pass
+                    if self.pageno - lastpageno >= 0:
+                        print("全部记录搜索完毕,现在导入数据库")
+                        print(jobList_url)
+                        sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
+                        n = cur.executemany(sql, self.job_list)
+                        print("导入完毕，共生成记录:", n)
+                        conn.commit()
+                        return
+                    if error_Count >= 8:
+                        print("放弃本页面采集，继续采集下一页")
+                        break
                     jobLinks = BsObj.find(
                         "div", {'class': 'r_searchlist positiolist'}).findAll('a')
                 except Exception as e:
-                    print("有问题，重新载入", e)
+                    error_Count += 1
+                    print("有问题，重新载入,尝试次数：", error_Count, e)
                 else:
                     break
             for i in jobLinks:
@@ -117,14 +126,20 @@ class job:
 
 
 def job_Detial(link):
+    headers = {
+        'Host': 'm.zhaopin.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+        'Accept': 'text/css,*/*;q=0.1',
+        'Connection': 'keep-alive',
+        'Referer': 'http://m.zhaopin.com/'
+    }
     start = time.clock()
     link = link[0]
     job_Id = re.search(re.compile("job/(.+)/$"), link).group(1)
     while True:
         try:
-            html = urlopen(link)
+            html = requests.get(link, headers=headers).text
             BsObj = BeautifulSoup(html, "html.parser")
-            html.close()
         except Exception as e:
             print("工作链接读取出现问题，跳过该链接，继续读取", e)
             return
@@ -136,7 +151,7 @@ def job_Detial(link):
     job_Article = BsObj.find('article').get_text()
     # 对工作内容进行格式化
     job_Article = re.sub(re.compile(
-        "[\u4e00-\u9fa5]|[\（\）\《\》\——\；\，\。\“\”\<\>\！]"), "", job_Article)
+        "(^[\u4e00-\u9fa5]|^[\（\）\《\》\——\；\，\。\“\”\<\>\！\：])"), "", job_Article)
     company_Link = 'http://m.zhaopin.com' + \
         BsObj.find('div', {"class": "r_jobdetails"}).find("a").attrs["href"]
     company_Id = re.search(re.compile("company/(.+)/$"), company_Link).group(1)
@@ -155,7 +170,7 @@ def job_Detial(link):
     # 记录地址信息
     while True:
         try:
-            html = urlopen(company_Link)
+            html = requests.get(company_Link, headers=headers).text
             BsObj_Add = BeautifulSoup(html, "html.parser")
             job_Information = BsObj_Add.find(
                 "ul", {"class": "companyshadow"}).get_text()
@@ -167,7 +182,6 @@ def job_Detial(link):
                 "企业性质(.*)"), job_Information).group(1)
             company_Scale = re.search(re.compile(
                 "规模(.*)"), job_Information).group(1)
-            html.close()
         except Exception as e:
             print('未记录到地址信息', e)
         else:
@@ -287,7 +301,7 @@ def getDistance_and_Duration(lon1, lat1, lon2, lat2):
 
 def coordinate():
     cur.execute("DROP TABLE if exists company")
-    cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('50-150人','少于50人') GROUP BY company_id,company_Address)")
+    cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('100-499人','20-99人','20人以下') GROUP BY company_id,company_Address)")
     cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
     cur.execute("ALTER TABLE company ADD primary key(company_Id)")
     cur.execute(
@@ -438,10 +452,10 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     cur.execute("DROP TABLE if exists job_Detail")
     cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
     cur.execute(
-        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (company_Duration<=3000 or company_Duration='') and (job_Issue in {0})".format(date_time))
+        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,400),job_Link from job_Detail where (company_Duration<=3000 or company_Duration='') and (job_Issue in {0})".format(date_time))
     result = cur.fetchall()
     cur.execute(
-        "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
+        "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_ZL'")
     title = cur.fetchall()
     with codecs.open("job_Detail.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
@@ -469,21 +483,22 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
 
 # 数据库设置
 conn = pymysql.connect(host='127.0.0.1', port=3306,
-                       user='root', passwd='888888', db='mysql', charset='utf8')
+                       user='root', passwd='888888', db='mysql', charset='utf8mb4')
 cur = conn.cursor()
 
 
 def store():
     try:
-        cur.execute("DROP DATABASE job_CD")
-        cur.execute('CREATE DATABASE job_CD')
+        cur.execute("DROP DATABASE job_ZL")
+        cur.execute('CREATE DATABASE job_ZL')
     except Exception as e:
-        cur.execute('CREATE DATABASE job_CD')
-    cur.execute('USE job_CD')
+        cur.execute('CREATE DATABASE job_ZL')
+    cur.execute('USE job_ZL')
     # 建立数据库表格
     try:
         cur.execute('CREATE TABLE work (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Name VARCHAR(200) ,job_Link VARCHAR(600),job_Wage VARCHAR(300),job_AverWage VARCHAR(200),company_Id VARCHAR(200),company_Name VARCHAR(200),company_Link VARCHAR(600),company_Nature VARCHAR(200),company_Scale VARCHAR(200),company_Area VARCHAR(400),company_Address VARCHAR(500),job_PeopleNum VARCHAR(400),job_Issue date,job_Article TEXT(20000),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))')
         cur.execute("CREATE TABLE workindex (row_Id BIGINT(10) NOT NULL AUTO_INCREMENT,job_Id VARCHAR(200) NOT NULL,job_Link VARCHAR(600),created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (row_Id,job_Id))")
+        cur.execute("SET NAMES utf8mb4")
         print("数据库建立完毕")
     except (AttributeError, pymysql.err.InternalError):
         print('TABLE已经存在')
