@@ -517,8 +517,8 @@ subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today(
 run(jobarea, homeAddress, homeCity, email,
     income, subject, keyword1, keyword2, keyword3)
 
-command = 'shutdown -s -t 60'
-os.system(command)
+# command = 'shutdown -s -t 60'
+# os.system(command)
 
 # store()
 # jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
