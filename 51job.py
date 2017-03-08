@@ -23,6 +23,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 import smtplib
+import requests
 
 # 初始设置
 timeout = 20
@@ -197,7 +198,7 @@ def job_AverWage():
             print("工资数为空值", e)
             job_Wage = ""
         cur.execute(
-            "UPDATE work SET job_AverWage=%s WHERE row_Id=%s", (job_Wage, row_Id))
+            "UPDATE work SET job_AverWage='%s' WHERE row_Id='%s'", (job_Wage, row_Id))
         print("已经计算完成的数量:", count)
     conn.commit()
     print('工资平均数计算完毕')
@@ -264,15 +265,17 @@ def getDistance_and_Duration(lon1, lat1, lon2, lat2):
 
 
 def coordinate():
+    lng = ''
+    lat = ''
     cur.execute("DROP TABLE if exists company")
     cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('50-150人','少于50人') GROUP BY company_id,company_Address)")
     cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
     cur.execute(
-        "SELECT company_Id,company_Area,company_Address FROM company WHERE company_x is null")
+        "SELECT company_Id,company_Area,company_Address,company_Name FROM company WHERE company_x is null")
     result = cur.fetchall()
     for i in result:
         count = 0
-        (company_Id, company_Area, company_Address) = i
+        (company_Id, company_Area, company_Address, company_Name) = i
         city = company_Area[0:2]
         print(city + "," + company_Address)
         while True:
@@ -282,7 +285,7 @@ def coordinate():
                     print("无法查到该地址信息，跳过该条信息继续...")
                     break
                 if len(company_Address) < 4:
-                    (lng, lat) = getAddress(company_Address, city)
+                    (lng, lat) = getAddress(company_Name, city)
                     print("地址不准确，按照公司名称查找坐标")
                 else:
                     (lng, lat) = getAddress(company_Address, city)
@@ -292,13 +295,8 @@ def coordinate():
                 company_Address = ''
             else:
                 break
-        try:
-            cur.execute('UPDATE company SET company_x={0},company_y={1} WHERE company_Id={2}'.format(
-                str(lng), str(lat), company_Id))
-        except Exception as e:
-            print("错误原因：", e)
-            cur.execute('UPDATE company SET company_x={0},company_y={1} WHERE company_Id={2}'.format(
-                "", "", company_Id))
+        cur.execute("UPDATE company SET company_x='{0}',company_y='{1}' WHERE company_Id='{2}'".format(
+            str(lng), str(lat), company_Id))
     conn.commit()
 
 # 获取工作信息，计算家和该工作地点的直线距离
@@ -312,13 +310,15 @@ def distance(homeAddress, homeCity):
     result = cur.fetchall()
     for i in result:
         (company_Id, company_x, company_y) = i
-        lon2 = round(eval(company_x), 6)
-        lat2 = round(eval(company_y), 6)
-        company_Distance, company_Duration, company_Traffic = getDistance_and_Duration(
-            lon1, lat1, lon2, lat2)
-        print(company_Distance, company_Duration, company_Traffic)
-        cur.execute("UPDATE company SET company_Distance='{0}',company_Duration='{1}',company_Traffic='{2}' WHERE company_Id='{3}'".format(
-            company_Distance, company_Duration, company_Traffic, company_Id))
+        if company_x != '' and company_y != '':
+            (company_Id, company_x, company_y) = i
+            lon2 = round(eval(company_x), 6)
+            lat2 = round(eval(company_y), 6)
+            company_Distance, company_Duration, company_Traffic = getDistance_and_Duration(
+                lon1, lat1, lon2, lat2)
+            print(company_Distance, company_Duration, company_Traffic)
+            cur.execute("UPDATE company SET company_Distance='{0}',company_Duration='{1}',company_Traffic='{2}' WHERE company_Id='{3}'".format(
+                company_Distance, company_Duration, company_Traffic, company_Id))
     conn.commit()
 
 # 发送邮件的模块
@@ -343,6 +343,44 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
     email_client.set_debuglevel(1)
     email_client.sendmail(from_account, to_account, msg.as_string())
     email_client.quit()
+
+# 判断筛选出来连接是否已经进行过简历的投递
+
+
+def job_If(jobList_url):
+    error_count = 0
+    with open('cookies.txt', 'r') as f:
+        cookies = {}
+        for line in f.read().split(';'):
+            name, value = line.strip().split('=', 1)  # 1代表只分割一次
+            cookies[name] = value
+    headers = {
+        'Host': 'm.zhaopin.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+        'Accept': 'text/css,*/*;q=0.1',
+        'Connection': 'keep-alive',
+        'cookies': str(cookies)
+    }
+    s = requests.session()
+    while True:
+        try:
+            print(jobList_url)
+            html = s.get(jobList_url, headers=headers,
+                         cookies=cookies, allow_redirects=False)
+            html.encoding = 'utf-8'
+            BsObj = BeautifulSoup(html.text, 'html.parser')
+            job_Al = BsObj.find("div", {'class': "bb"}).p.span.get_text()
+            print(job_Al)
+            if job_Al == "已申请":
+                return True
+            if error_count == 5:
+                print("程序异常，跳过该工作链接")
+                return False
+        except:
+            error_count += 1
+            print("网络故障重新运行,运行次数：", error_count)
+        else:
+            break
 
 
 def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
@@ -421,6 +459,11 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     cur.execute(
         "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
     title = cur.fetchall()
+    result = list(result)
+    for i in result:
+        print(i[13])
+        if job_If(i[13]) == True:
+            result.remove(i)
     with codecs.open("job_Detail.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
         f_csv.writerow(title)
@@ -480,7 +523,7 @@ income = int('6000')
 subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
 
 run(jobarea, homeAddress, homeCity, email,
-    income, subject, keyword1, keyword2, keyword3)
+    income, subject, keyword3)
 
 # store()
 # jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200

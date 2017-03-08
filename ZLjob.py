@@ -233,7 +233,7 @@ def job_AverWage():
             print("工资数为空值", e)
             job_Wage = ""
         cur.execute(
-            "UPDATE work SET job_AverWage=%s WHERE row_Id=%s", (job_Wage, row_Id))
+            "UPDATE work SET job_AverWage='%s' WHERE row_Id='%s'", (job_Wage, row_Id))
         print("已经计算完成的数量:", count)
     conn.commit()
     print('工资平均数计算完毕')
@@ -309,7 +309,7 @@ def coordinate():
     result = cur.fetchall()
     for i in result:
         count = 0
-        (company_Id, company_Area, company_Address) = i
+        (company_Id, company_Area, company_Address, company_Name) = i
         city = company_Area[0:2]
         while True:
             try:
@@ -318,7 +318,7 @@ def coordinate():
                     print("无法查到该地址信息，跳过该条信息继续...")
                     break
                 if len(company_Address) < 4:
-                    (lng, lat) = getAddress(company_Address, city)
+                    (lng, lat) = getAddress(company_Name, city)
                     print("地址不准确，按照公司名称查找坐标")
                 else:
                     (lng, lat) = getAddress(company_Address, city)
