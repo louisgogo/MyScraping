@@ -301,7 +301,7 @@ def getDistance_and_Duration(lon1, lat1, lon2, lat2):
 
 def coordinate():
     cur.execute("DROP TABLE if exists company")
-    cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('100-499人','20-99人','20人以下') GROUP BY company_id,company_Address)")
+    cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('20-99人','20人以下') GROUP BY company_id,company_Address)")
     cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
     cur.execute("ALTER TABLE company ADD primary key(company_Id)")
     cur.execute(

@@ -117,7 +117,7 @@ def job_Detial(link):
     job_Article = BsObj.find('article').get_text()
     # 对工作内容进行格式化
     job_Article = re.sub(re.compile(
-        "[\u4e00-\u9fa5]|[\（\）\《\》\——\；\，\。\“\”\<\>\！]"), "", job_Article)
+        "^[\u4e00-\u9fa5]|^[\（\）\《\》\——\；\，\。\“\”\<\>\！]"), "", job_Article)
     company_Link = BsObj.find('div', {"class": "xq"}).find("a").attrs["href"]
     company_Id = re.search(re.compile("coid=([0-9]+)$"), company_Link)
     company_Id = company_Id.group(1)
@@ -482,16 +482,16 @@ subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today(
 run(jobarea, homeAddress, homeCity, email,
     income, subject, keyword1, keyword2, keyword3)
 
-store()
-jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
-keyword1 = "审计"
-keyword2 = "财务"
-keyword3 = "会计"
-homeAddress = '福田区竹子林三路竹盛花园'
-homeCity = "深圳"
-email = 'louse12345@163.com'
-income = int('8000')
-subject = "肥肥-{0}的工作记录，请查收".format(datetime.date.today())
+# store()
+# jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
+# keyword1 = "审计"
+# keyword2 = "财务"
+# keyword3 = "会计"
+# homeAddress = '福田区竹子林三路竹盛花园'
+# homeCity = "深圳"
+# email = 'louse12345@163.com'
+# income = int('8000')
+#subject = "肥肥-{0}的工作记录，请查收".format(datetime.date.today())
 
-run(jobarea, homeAddress, homeCity, email,
-    income, subject, keyword1, keyword2, keyword3)
+# run(jobarea, homeAddress, homeCity, email,
+#    income, subject, keyword1, keyword2, keyword3)
