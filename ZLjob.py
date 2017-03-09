@@ -305,7 +305,7 @@ def coordinate():
     cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
     cur.execute("ALTER TABLE company ADD primary key(company_Id)")
     cur.execute(
-        "SELECT company_Id,company_Area,company_Address FROM company WHERE company_x is null")
+        "SELECT company_Id,company_Area,company_Address,company_Name FROM company WHERE company_x is null")
     result = cur.fetchall()
     for i in result:
         count = 0

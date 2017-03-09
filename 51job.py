@@ -340,47 +340,24 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
         mime["Content-Disposition"] = 'attachment; filename={0}job_Detail.csv'.format(
             datetime.date.today())
         msg.attach(mime)
-    email_client.set_debuglevel(1)
+    email_client.set_debuglevel(0)
     email_client.sendmail(from_account, to_account, msg.as_string())
     email_client.quit()
 
 # 判断筛选出来连接是否已经进行过简历的投递
 
 
-def job_If(jobList_url):
-    error_count = 0
-    with open('cookies.txt', 'r') as f:
-        cookies = {}
-        for line in f.read().split(';'):
-            name, value = line.strip().split('=', 1)  # 1代表只分割一次
-            cookies[name] = value
-    headers = {
-        'Host': 'm.zhaopin.com',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
-        'Accept': 'text/css,*/*;q=0.1',
-        'Connection': 'keep-alive',
-        'cookies': str(cookies)
-    }
+def job_if(jobList_url, headers, cookies):
     s = requests.session()
-    while True:
-        try:
-            print(jobList_url)
-            html = s.get(jobList_url, headers=headers,
-                         cookies=cookies, allow_redirects=False)
-            html.encoding = 'utf-8'
-            BsObj = BeautifulSoup(html.text, 'html.parser')
-            job_Al = BsObj.find("div", {'class': "bb"}).p.span.get_text()
-            print(job_Al)
-            if job_Al == "已申请":
-                return True
-            if error_count == 5:
-                print("程序异常，跳过该工作链接")
-                return False
-        except:
-            error_count += 1
-            print("网络故障重新运行,运行次数：", error_count)
-        else:
-            break
+    html = s.get(jobList_url, headers=headers,
+                 cookies=cookies, allow_redirects=False)
+    html.encoding = 'utf-8'
+    BsObj = BeautifulSoup(html.text, 'html.parser')
+    job_Al = BsObj.find("div", {'class': "bb"}).p.span.get_text()
+    if job_Al == '已申请':
+        return True
+    else:
+        return False
 
 
 def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
@@ -459,11 +436,29 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     cur.execute(
         "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
     title = cur.fetchall()
+# 将结果中已经投递过的工作记录去掉
     result = list(result)
+    print("总记录数：", len(result))
+    with open('cookies1.txt', 'r') as f:
+        cookies = {}
+        for line in f.read().split(';'):
+            print(line)
+            name, value = line.strip().split('=', 1)  # 1代表只分割一次
+            cookies[name] = value
+    print(cookies)
+    headers = {
+        'Host': 'm.51job.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+        'Accept': 'text/css,*/*;q=0.1',
+        'Connection': 'keep-alive'
+    }
     for i in result:
         print(i[13])
-        if job_If(i[13]) == True:
+        if job_if(i[13], headers, cookies) == True:
             result.remove(i)
+            print("成功移除一条已申请的记录", i[13])
+    print("去除已经重复投递后的工作数量", len(result))
+    # 生成结果CSV文件
     with codecs.open("job_Detail.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
         f_csv.writerow(title)
@@ -523,7 +518,7 @@ income = int('6000')
 subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
 
 run(jobarea, homeAddress, homeCity, email,
-    income, subject, keyword3)
+    income, subject, keyword1, keyword2, keyword3)
 
 # store()
 # jobarea = '040000'  # 提供基本参数，广东030000，四川090000，深圳040000，省会编码是0200
@@ -534,7 +529,7 @@ run(jobarea, homeAddress, homeCity, email,
 # homeCity = "深圳"
 # email = 'louse12345@163.com'
 # income = int('8000')
-#subject = "肥肥-{0}的工作记录，请查收".format(datetime.date.today())
+# subject = "肥肥-{0}的工作记录，请查收".format(datetime.date.today())
 
 # run(jobarea, homeAddress, homeCity, email,
 #    income, subject, keyword1, keyword2, keyword3)
