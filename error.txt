@@ -1,1 +1,2 @@
-本次程序运行的日期：2017-03-09
+本次程序运行的日期：2017-03-10
+未进行采集的工作链接:('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=82632913',)
