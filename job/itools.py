@@ -3,11 +3,11 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header
 import smtplib
 import re
-from job.dataBase import connection
+from dataBase import connection
 import datetime
 from bs4 import BeautifulSoup
 import requests
-import __init__
+
 
 
 def wage_Average(wage):
@@ -70,7 +70,7 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
         mime["Content-Disposition"] = 'attachment; filename={0}job_Detail.csv'.format(
             datetime.date.today())
         msg.attach(mime)
-    email_client.set_debuglevel(0)
+    email_client.set_debuglevel(1)
     email_client.sendmail(from_account, to_account, msg.as_string())
     email_client.quit()
 
@@ -101,6 +101,8 @@ def cookies(name):
 
 if __name__ == "__main__":
     print(wage_Average('5000-9000元/月'))
+    send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
+               'louse12345@163.com', '测试邮件', '测试邮件')
     jobList_url = "http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=86165749"
     cookies = cookies('cookies1.txt')
     headers = {
