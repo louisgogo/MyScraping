@@ -1,8 +1,14 @@
 import pymysql
 
-def store():
+
+def connection():
     conn = pymysql.connect(host='127.0.0.1', port=3306,
                            user='root', passwd='888888', db='mysql', charset='utf8')
+    return conn
+
+
+def build():
+    conn = connection()
     cur = conn.cursor()
     try:
         cur.execute("DROP DATABASE job_CD")
@@ -19,3 +25,6 @@ def store():
         print('TABLE已经存在')
     cur.close()
     conn.close()
+
+if __name__ == '__main__':
+    build()
