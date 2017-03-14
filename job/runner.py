@@ -17,16 +17,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     for i in args:
         print(i)
         work = job(jobarea, i, homeAddress, homeCity, income)
-        work.job_Reader()
-    cur.execute(
-        "create table test (select * from workindex group by job_Id order by row_id)")
-    cur.execute("drop table workindex")
-    cur.execute("create table workindex (select * from test)")
-    cur.execute("drop table test")
-    conn.commit()
-
-    cur.execute("SELECT job_Link FROM workindex")
-    job_Links = cur.fetchall()
+        job_Links = work.job_Reader()
     pages = len(job_Links)
     page = 0
     for link in job_Links:
@@ -118,4 +109,4 @@ if __name__ == "__main__":
     subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
     build()
     run(jobarea, homeAddress, homeCity, email,
-        income, subject, keyword1, keyword2, keyword3)
+        income, subject, keyword1)
