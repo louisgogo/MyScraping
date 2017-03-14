@@ -90,7 +90,7 @@ def job_if(jobList_url, headers, cookies):
         return False
 
 
-def cookies(name):
+def cooky(name):
     with open(name, 'r') as f:
         cookies = {}
         for line in f.read().split(';'):
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
                'louse12345@163.com', '测试邮件', '测试邮件')
     jobList_url = "http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=86165749"
-    cookies = cookies('cookies1.txt')
+    cookies = cooky('cookies1.txt')
     headers = {
         'Host': 'm.51job.com',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',

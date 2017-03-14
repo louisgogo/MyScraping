@@ -10,6 +10,7 @@ from collections import defaultdict
 
 conn = connection()
 cur = conn.cursor()
+cur.execute("USE job_CD")
 job_Info = namedtuple('job_Info', ['性质', "发布", "薪资", "地区", "规模", "招聘"])
 job_prototype = job_Info("", "", "", "", "", "")
 
@@ -128,6 +129,7 @@ def job_Detial(link):
     data = (job_Id, job_Name, link, job_Wage, company_Id, company_Name, company_Link, company_Nature,
             company_Scale, company_Area, company_Address, job_PeopleNum, job_Issue, job_Article)
     cur.execute(sql, data)
+    conn.commit()
     end = time.clock()
     print("read: %f s" % (end - start))
 
