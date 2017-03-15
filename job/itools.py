@@ -70,7 +70,7 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
         mime["Content-Disposition"] = 'attachment; filename={0}job_Detail.csv'.format(
             datetime.date.today())
         msg.attach(mime)
-    email_client.set_debuglevel(1)
+    email_client.set_debuglevel(0)
     email_client.sendmail(from_account, to_account, msg.as_string())
     email_client.quit()
 

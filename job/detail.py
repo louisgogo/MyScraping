@@ -7,13 +7,14 @@ import re
 import time
 from collections import namedtuple
 from collections import defaultdict
+from queue import Queue
 
 conn = connection()
 cur = conn.cursor()
 cur.execute("USE job_CD")
 job_Info = namedtuple('job_Info', ['性质', "发布", "薪资", "地区", "规模", "招聘"])
 job_prototype = job_Info("", "", "", "", "", "")
-
+job_list = set()
 
 class job:
 
@@ -24,8 +25,7 @@ class job:
         self.homeCity = homeCity
         self.income = income
         self.pageno = 1
-        self.job_list = []
-        self.data = ()
+
 
     def job_Reader(self):
         # 获取工作列表
@@ -42,11 +42,7 @@ class job:
                     try:
                         if BsObj.find("p", {"class": "no_record"}).get_text() == "暂无搜索记录":
                             print("全部记录搜索完毕,现在导入数据库")
-                            sql = "INSERT INTO workindex(job_Link,job_Id) VALUES(%s,%s)"
-                            n = cur.executemany(sql, self.job_list)
-                            print("导入完毕，共生成记录:", n)
-                            conn.commit()
-                            return
+                            return job_list
                     except:
                         pass
                     jobLinks = BsObj.find(
@@ -60,18 +56,10 @@ class job:
                     try:
                         if wage_Average(i.em.get_text()) >= self.income:
                             job_Link = i.attrs["href"]
-                            job_Id = re.search(re.compile(
-                                "jobid=([0-9]+)$"), job_Link)
-                            job_Id = job_Id.group(1)
-                            self.data = (job_Link, job_Id)
-                            self.job_list.append(self.data)
+                            job_list.add(job_Link)
                     except TypeError:
                         job_Link = i.attrs["href"]
-                        job_Id = re.search(re.compile(
-                            "jobid=([0-9]+)$"), job_Link)
-                        job_Id = job_Id.group(1)
-                        self.data = (job_Link, job_Id)
-                        self.job_list.append(self.data)
+                        job_list.add(job_Link)
             print("已经爬完的页数为：", self.pageno)
             self.pageno += 1
 
@@ -80,8 +68,9 @@ class job:
 
 def job_Detial(link):
     start = time.clock()
-    link = link[0]
+    print(link)
     job_Id = re.search(re.compile("jobid=([0-9]+)$"), link).group(1)
+    print(job_Id)
     while True:
         try:
             html = urlopen(link)
@@ -100,8 +89,10 @@ def job_Detial(link):
     job_Article = re.sub(re.compile(
         "^[\u4e00-\u9fa5]|^[\（\）\《\》\——\；\，\。\“\”\<\>\！]"), "", job_Article)
     company_Link = BsObj.find('div', {"class": "xq"}).find("a").attrs["href"]
+    print(company_Link)
     company_Id = re.search(re.compile("coid=([0-9]+)$"), company_Link)
     company_Id = company_Id.group(1)
+    print(company_Id)
     # 记录工作的基本信息，包括性质,发布,薪资,地区,规模,招聘
     job_Information = BsObj.find("div", {"class": 'xqd'}).findAll("label")
     d = defaultdict(dict)
@@ -140,7 +131,7 @@ def dict_to_job(s):
     return job_prototype._replace(**s)
 
 if __name__ == '__main__':
-    link = ('http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=86932592',)
+    link = 'http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=86932592'
     job_Detial(link)
     jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200
     keyword = "策划"
