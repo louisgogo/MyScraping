@@ -1,4 +1,5 @@
-a = set()
-a.add(6)
-a.add(6)
-print(a)
+from queue import Queue
+
+q = Queue()
+q.put('你好')
+print(q.get())
