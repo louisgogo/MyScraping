@@ -17,16 +17,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     for i in args:
         print(i)
         work = job(jobarea, i, homeAddress, homeCity, income)
-        work.job_Reader()
-    cur.execute(
-        "create table test (select * from workindex group by job_Id order by row_id)")
-    cur.execute("drop table workindex")
-    cur.execute("create table workindex (select * from test)")
-    cur.execute("drop table test")
-    conn.commit()
-
-    cur.execute("SELECT job_Link FROM workindex")
-    job_Links = cur.fetchall()
+        job_Links = work.job_Reader()
     pages = len(job_Links)
     page = 0
     for link in job_Links:
@@ -58,6 +49,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
     cur.execute(
         "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (job_Issue in {0})".format(date_time))
+    # (company_Duration<=3000 or company_Duration='') and
     result = cur.fetchall()
     cur.execute(
         "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
