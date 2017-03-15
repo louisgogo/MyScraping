@@ -57,7 +57,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     cur.execute("DROP TABLE if exists job_Detail")
     cur.execute("create table job_Detail (select w.job_Name,w.job_Wage,w.job_AverWage,w.company_Name,w.company_Nature,w.company_Scale,w.company_Address,c.company_Distance,c.company_Duration,c.company_Traffic,w.job_PeopleNum,w.job_Issue,w.job_Article,w.job_Link from company c left join work w on c.company_Id=w.company_Id )")
     cur.execute(
-        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (company_Duration<=3000 or company_Duration='') and (job_Issue in {0})".format(date_time))
+        "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (job_Issue in {0})".format(date_time))
     result = cur.fetchall()
     cur.execute(
         "select COLUMN_NAME from INFORMATION_SCHEMA.Columns where table_name='job_Detail' and table_schema='job_cd'")
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     homeAddress = '锦江区东风路4号一栋一单元'
     homeCity = "成都"
     email = 'larkjoe@126.com'
-    income = int('8000')
+    income = int('6000')
     subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
     build()
     run(jobarea, homeAddress, homeCity, email,
