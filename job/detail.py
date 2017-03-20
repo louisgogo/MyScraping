@@ -16,6 +16,7 @@ job_Info = namedtuple('job_Info', ['性质', "发布", "薪资", "地区", "规�
 job_prototype = job_Info("", "", "", "", "", "")
 job_list = set()
 
+
 class job:
 
     def __init__(self, jobarea, keyword, homeAddress, homeCity, income):
@@ -25,7 +26,6 @@ class job:
         self.homeCity = homeCity
         self.income = income
         self.pageno = 1
-
 
     def job_Reader(self):
         # 获取工作列表
@@ -54,7 +54,7 @@ class job:
             for i in jobLinks:
                 if self.keyword in i.h3.get_text():
                     try:
-                        if wage_Average(i.em.get_text()) >= self.income:
+                        if 8000 >= wage_Average(i.em.get_text()) >= self.income:
                             job_Link = i.attrs["href"]
                             job_list.add(job_Link)
                     except TypeError:
