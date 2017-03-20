@@ -7,6 +7,7 @@ import codecs
 import csv
 from maps import coordinate, distance
 import socket
+import os
 
 
 conn = connection()
@@ -113,3 +114,4 @@ if __name__ == "__main__":
     build()
     run(jobarea, homeAddress, homeCity, email,
         income, subject, keyword1, keyword2, keyword3)
+    os.system('shutdown -s -t 200')
