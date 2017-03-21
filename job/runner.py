@@ -81,6 +81,12 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
         for j in blacklist:
             if i[15] == j:
                 filling.remove(i)
+    dellist = list(set(result) - set(filling))
+# 将筛选后删除的结果列示出来
+    with codecs.open("job_Del.csv", "w", encoding="utf_8_sig") as f:
+        f_csv = csv.writer(f)
+        f_csv.writerows(dellist)
+        print("未进行自动投递的文件生成")
 # 将筛选后的结果发送到邮箱
     with codecs.open("job_Detail.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
@@ -118,8 +124,6 @@ if __name__ == "__main__":
     keyword2 = "运营"
     keyword3 = "品牌"
     homeAddress = '锦江区东风路4号一栋一单元'
-    whitelist = []
-    blacklist = []
     homeCity = "成都"
     email = 'larkjoe@126.com'
     income = int('5000')
