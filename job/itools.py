@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 import requests
 
 
-
 def wage_Average(wage):
     try:
         li = re.findall(re.compile('([0-9]\d*\.?\d*)'), wage)
@@ -90,6 +89,27 @@ def job_if(jobList_url, headers, cookies):
         return False
 
 
+def job_apply(jobList_url, headers, cookies, jobid):
+    s = requests.session()
+    html = s.get(jobList_url, headers=headers,
+                 cookies=cookies, allow_redirects=False)
+    html.encoding = 'utf-8'
+    BsObj = BeautifulSoup(html.text, 'html.parser')
+    job_Al = BsObj.find("div", {'class': "bb"}).p.span.get_text()
+    print(job_Al)
+    if job_Al == "申请职位":
+        url = 'http://m.51job.com/ajax/search/apply.ajax.php'
+        data = {'jobid': '{0}%3A0'.format(jobid),
+                'from': 'search%2Fjobdetail', 'jc': '0'}
+        html = s.post(url, headers=headers, cookies=cookies, data=data)
+        html = s.get(jobList_url, headers=headers,
+                     cookies=cookies, allow_redirects=False)
+        html.encoding = 'utf-8'
+        BsObj = BeautifulSoup(html.text, 'html.parser')
+        job_Al = BsObj.find("div", {'class': "bb"}).p.span.get_text()
+        print(job_Al)
+
+
 def cooky(name):
     with open(name, 'r') as f:
         cookies = {}
@@ -104,6 +124,7 @@ if __name__ == "__main__":
     send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
                'louse12345@163.com', '测试邮件', '测试邮件')
     jobList_url = "http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=86165749"
+    jobid = 86165749
     cookies = cooky('cookies1.txt')
     headers = {
         'Host': 'm.51job.com',
@@ -112,3 +133,4 @@ if __name__ == "__main__":
         'Connection': 'keep-alive'
     }
     print(job_if(jobList_url, headers, cookies))
+    job_apply(jobList_url, headers, cookies, jobid)

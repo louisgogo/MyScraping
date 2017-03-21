@@ -2,16 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import pymysql
 
-# conn = pymysql.connect(host='127.0.0.1', port=3306,
-#                       user='root', passwd='888888', db='mysql', charset='utf8')
-#cur = conn.cursor()
-#cur.execute('use job_CD')
-# cur.execute(
-#    "select job_Name,job_Wage,job_AverWage,company_Name,company_Nature,company_Scale,company_Address,company_Distance,company_Duration,company_Traffic,job_PeopleNum,job_Issue,left(job_Article,300),job_Link from job_Detail where (company_Duration<=3000 or company_Duration='') ")
-#result = cur.fetchall()
 
-
-def job_if(jobList_url, headers, cookies):
+def job_apply(jobList_url, headers, cookies):
     s = requests.session()
     html = s.get(jobList_url, headers=headers,
                  cookies=cookies, allow_redirects=False)
@@ -19,6 +11,17 @@ def job_if(jobList_url, headers, cookies):
     BsObj = BeautifulSoup(html.text, 'html.parser')
     job_Al = BsObj.find("div", {'class': "bb"}).p.span.get_text()
     print(job_Al)
+    if job_Al == "申请职位":
+        url = 'http://m.51job.com/ajax/search/apply.ajax.php'
+        data = {'jobid': '60865207%3A0',
+                'from': 'search%2Fjobdetail', 'jc': '0'}
+        html = s.post(url, headers=headers, cookies=cookies, data=data)
+        html = s.get(jobList_url, headers=headers,
+                     cookies=cookies, allow_redirects=False)
+        html.encoding = 'utf-8'
+        BsObj = BeautifulSoup(html.text, 'html.parser')
+        job_Al = BsObj.find("div", {'class': "bb"}).p.span.get_text()
+        print(job_Al)
 
 with open('cookies1.txt', 'r') as f:
     cookies = {}
@@ -35,12 +38,5 @@ headers = {
     'Connection': 'keep-alive'
 }
 
-#result = list(result)
-#print('总结果数：', len(result))
-# for i in result:
-#    print(i[13])
-jobList_url = 'http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=84639426'
-job_if(jobList_url, headers, cookies)
-#        result.remove(i)
-#        print("成功移除一条已申请的记录", i[13])
-# print(len(result))
+jobList_url = 'http://m.51job.com/search/jobdetail.php?jobtype=0&jobid=60865207'
+job_apply(jobList_url, headers, cookies)
