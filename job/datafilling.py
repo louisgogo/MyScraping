@@ -55,6 +55,7 @@ if __name__ == "__main__":
     result, title = data_Filling()
     whitelist = white_List()
     blacklist = black_List()
+    print(blacklist)
     result = list(result)
     filling = []
     print(len(result))
@@ -64,6 +65,7 @@ if __name__ == "__main__":
                 filling.append(i)
                 print(i[0], j)
                 break
+    print(len(filling))
     for i in filling:
         for j in blacklist:
             if i[15] == j:
