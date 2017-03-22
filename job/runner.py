@@ -81,6 +81,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
         for j in blacklist:
             if i[15] == j:
                 filling.remove(i)
+                print("黑名单公司：", i[0], i[3])
     dellist = list(set(result) - set(filling))
 # 将筛选后删除的结果列示出来
     with codecs.open("job_Del.csv", "w", encoding="utf_8_sig") as f:
@@ -105,7 +106,6 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
 # 自动投递简历功能
     a = input("是否需要进行自动投递？(Y/N)")
     if a == 'Y':
-        result = list(result)
         headers = {
             'Host': 'm.51job.com',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
@@ -113,7 +113,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
             'Connection': 'keep-alive'
         }
         cookies = cooky('cookies1.txt')
-        for i in result:
+        for i in filling:
             print(i[13], i[14])
             job_apply(i[13], headers, cookies, i[14])
             print("已投递企业信息：", i[0], i[3])

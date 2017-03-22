@@ -68,4 +68,5 @@ if __name__ == "__main__":
         for j in blacklist:
             if i[15] == j:
                 filling.remove(i)
+                print("黑名单公司：", i[0], i[3])
     print(len(filling))

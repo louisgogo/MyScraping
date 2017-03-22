@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import datetime
 import requests
 
-url = 'http://www.cninfo.com.cn/information/stock/financialreport_.jsp?stockCode=000002'
+url = 'http://www.cninfo.com.cn/information/stock/incomestatements_.jsp?stockCode=000002'
 # 可选参数包括：incomestatements，balancesheet，cashflow，financialreport，注意变更url和data中对应的参数
 # http://www.cninfo.com.cn/information/stock/financialreport_.jsp?stockCode=000002
 headers = {
@@ -15,7 +15,7 @@ headers = {
 }
 data = {'yyyy': '2015',
         'mm': '-12-31',
-        'cwzb': 'financialreport'
+        'cwzb': 'incomestatements'
         }
 html = requests.post(url, headers=headers, allow_redirects=False, data=data)
 print(html.encoding)

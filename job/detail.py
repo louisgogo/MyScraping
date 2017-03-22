@@ -7,7 +7,6 @@ import re
 import time
 from collections import namedtuple
 from collections import defaultdict
-from queue import Queue
 
 conn = connection()
 cur = conn.cursor()
