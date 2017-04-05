@@ -105,6 +105,20 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
             break
 # 自动投递简历功能
     a = input("是否需要进行自动投递？(Y/N)")
+# 再次执行数据清理工作
+    whitelist = white_List()
+    blacklist = black_List()
+    filling = []
+    for i in result:
+        for j in whitelist:
+            if j in i[0]:
+                filling.append(i)
+                print(i[0], j)
+                break
+    for i in filling:
+        for j in blacklist:
+            if i[15] == j:
+                filling.remove(i)
     if a == 'Y':
         headers = {
             'Host': 'm.51job.com',
