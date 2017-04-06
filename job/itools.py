@@ -54,7 +54,7 @@ def job_AverWage():
     print('工资平均数计算完毕')
 
 
-def send_email(SMTP_host, from_account, from_passwd, to_account, subject, content):
+def send_email(SMTP_host, from_account, from_passwd, to_account, subject, content, file_name):
     email_client = smtplib.SMTP_SSL(SMTP_host, '465')
     email_client.login(from_account, from_passwd)
     # create msg
@@ -63,11 +63,11 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
     msg['From'] = from_account
     msg['To'] = to_account
     msg.attach(MIMEText(content, 'plain', 'utf-8'))
-    with open('job_Detail.csv', 'rb') as f:
+    with open(file_name, 'rb') as f:
         mime = MIMEText(f.read(), 'base64', 'utf_8')
         mime["Content-Type"] = 'application/octet-stream'
-        mime["Content-Disposition"] = 'attachment; filename={0}job_Detail.csv'.format(
-            datetime.date.today())
+        mime["Content-Disposition"] = 'attachment; filename={0}{1}'.format(
+            datetime.date.today(), file_name)
         msg.attach(mime)
     email_client.set_debuglevel(0)
     email_client.sendmail(from_account, to_account, msg.as_string())

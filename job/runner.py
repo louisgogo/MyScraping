@@ -51,7 +51,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     while True:
         try:
             send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-                       email, subject, '今天的工作邮件，请查收，最爱你的贝贝')
+                       email, subject, '今天的工作邮件，请查收，最爱你的贝贝', 'job_Detail.csv')
         except Exception as e:
             print('发生邮件错误，错误原因为:', e)
         else:
@@ -60,7 +60,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     while True:
         try:
             send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-                       'louse12345@163.com', subject, '工作邮件的备份资料')
+                       'louse12345@163.com', subject, '工作邮件的备份资料', 'job_Detail.csv')
         except Exception as e:
             print('发生邮件错误，错误原因为:', e)
         else:
@@ -89,7 +89,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
         f_csv.writerows(dellist)
         print("未进行自动投递的文件生成")
 # 将筛选后的结果发送到邮箱
-    with codecs.open("job_Detail.csv", "w", encoding="utf_8_sig") as f:
+    with codecs.open("job_Filter.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
         f_csv.writerow(title)
         f_csv.writerows(filling)
@@ -97,7 +97,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     while True:
         try:
             send_email('smtp.qq.com', '272861776@qq.com', 'xjsdroroibjacaej',
-                       'louse12345@163.com', "自动投递简历的列表", '清理后的工作清单')
+                       'louse12345@163.com', "自动投递简历的列表", '清理后的工作清单', 'job_Filter.csv')
         except Exception as e:
             print('发生邮件错误，错误原因为:', e)
         else:
