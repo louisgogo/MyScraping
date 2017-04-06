@@ -36,7 +36,7 @@ def coordinate():
     lng = ''
     lat = ''
     cur.execute("DROP TABLE if exists company")
-    cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work where company_Scale not in ('50-150人','少于50人') GROUP BY company_id,company_Address)")
+    cur.execute("CREATE table company(select company_Id,company_Name,company_Scale,company_Area,company_Address FROM work GROUP BY company_id,company_Address)")
     cur.execute("ALTER TABLE company ADD COLUMN(company_x VARCHAR(300),company_y VARCHAR(300),company_Distance VARCHAR(300),company_Duration VARCHAR(300),company_Traffic VARCHAR(300))")
     cur.execute(
         "SELECT company_Id,company_Area,company_Address,company_Name FROM company WHERE company_x is null")
