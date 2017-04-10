@@ -115,7 +115,7 @@ def job_Detial(link):
         except Exception as e:
             print("无法记录地址信息，错误原因:", e)
             company_Address = ""
-    if company_Scale not in ('50-150人', '少于50人', '150-500人'):
+    if company_Scale not in ('50-150人', '少于50人'):
         sql = "INSERT INTO work(job_Id,job_Name,job_Link,job_Wage,company_Id,company_Name,company_Link,company_Nature,company_Scale,company_Area,company_Address,job_PeopleNum,job_Issue,job_Article) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
         data = (job_Id, job_Name, link, job_Wage, company_Id, company_Name, company_Link, company_Nature,
                 company_Scale, company_Area, company_Address, job_PeopleNum, job_Issue, job_Article)

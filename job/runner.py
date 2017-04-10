@@ -140,7 +140,7 @@ if __name__ == "__main__":
     homeAddress = '锦江区东风路4号一栋一单元'
     homeCity = "成都"
     email = 'larkjoe@126.com'
-    income = int('5000')
+    income = int('6000')
     subject = "宝宝鸡-{0}的工作记录，请查收".format(datetime.date.today())
     close = input("是否需要执行自动关机功能？(Y/N)")
     build()
