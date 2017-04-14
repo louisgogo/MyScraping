@@ -53,7 +53,7 @@ class job:
             for i in jobLinks:
                 if self.keyword in i.h3.get_text():
                     try:
-                        if 8000 >= wage_Average(i.em.get_text()) >= self.income:
+                        if 10000 >= wage_Average(i.em.get_text()) >= self.income:
                             job_Link = i.attrs["href"]
                             job_list.add(job_Link)
                     except TypeError:

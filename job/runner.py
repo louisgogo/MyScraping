@@ -8,7 +8,7 @@ import csv
 from maps import coordinate, distance
 import socket
 import os
-from datafilling import data_Filling, white_List, black_List
+from datafilling import data_Filling, white_List, black_List, bw_Filling
 
 timeout = 20
 socket.setdefaulttimeout(timeout)  # 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
@@ -69,19 +69,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
 # 执行数据清理工作
     whitelist = white_List()
     blacklist = black_List()
-    result = list(result)
-    filling = []
-    for i in result:
-        for j in whitelist:
-            if j in i[0]:
-                filling.append(i)
-                print(i[0], j)
-                break
-    for a in filling:
-        if a[15] in blacklist:
-            print(a[15], a[3])
-            filling.remove(a)
-    dellist = list(set(result) - set(filling))
+    dellist, refilling = bw_Filling(result, whitelist, blacklist)
 # 将筛选后删除的结果列示出来
     with codecs.open("job_Del.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
@@ -91,7 +79,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     with codecs.open("job_Filter.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
         f_csv.writerow(title)
-        f_csv.writerows(filling)
+        f_csv.writerows(refilling)
         print("自动投递文件生成")
     while True:
         try:
@@ -107,15 +95,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
 # 再次执行数据清理工作
     whitelist = white_List()
     blacklist = black_List()
-    for i in filling:
-        for j in whitelist:
-            if j in i[0]:
-                filling.append(i)
-                print(i[0], j)
-                break
-    for a in filling:
-        if a[15] in blacklist:
-            filling.remove(a)
+    dellist, refilling = bw_Filling(refilling, whitelist, blacklist)
     if a == 'Y':
         headers = {
             'Host': 'm.51job.com',
@@ -124,7 +104,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
             'Connection': 'keep-alive'
         }
         cookies = cooky('cookies1.txt')
-        for i in filling:
+        for i in refilling:
             print(i[13], i[14])
             job_apply(i[13], headers, cookies, i[14])
             print("已投递企业信息：", i[0], i[3])
