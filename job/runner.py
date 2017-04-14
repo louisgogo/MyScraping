@@ -77,10 +77,10 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
                 filling.append(i)
                 print(i[0], j)
                 break
-    for i in filling:
-        if i[15] in blacklist:
-            filling.remove(i)
-            print("黑名单公司：", i[0], i[3])
+    for a in filling:
+        if a[15] in blacklist:
+            print(a[15], a[3])
+            filling.remove(a)
     dellist = list(set(result) - set(filling))
 # 将筛选后删除的结果列示出来
     with codecs.open("job_Del.csv", "w", encoding="utf_8_sig") as f:
@@ -113,9 +113,9 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
                 filling.append(i)
                 print(i[0], j)
                 break
-    for i in filling:
-        if i[15] in blacklist:
-            filling.remove(i)
+    for a in filling:
+        if a[15] in blacklist:
+            filling.remove(a)
     if a == 'Y':
         headers = {
             'Host': 'm.51job.com',

@@ -51,24 +51,26 @@ def black_List():
     return blacklist
 
 
-if __name__ == "__main__":
-    result, title = data_Filling()
-    whitelist = white_List()
-    blacklist = black_List()
+def bw_Filling(result, whitelist, blacklist):
+    # 执行数据清理工作
     result = list(result)
     filling = []
-    print(len(result))
+    refilling = []
     for i in result:
         for j in whitelist:
             if j in i[0]:
                 filling.append(i)
                 break
-                print(i[0], j)
-                break
-    for a in filling:
-        print(a[3], a[0])
-        if a[15] in blacklist:
-            print(a[15], a[3], a[0])
-            filling.remove(a)
-    for b in filling:
-        print(b[3])
+    for i in filling:
+        if i[15] not in blacklist:
+            print(i[15], i[3])
+            refilling.append(i)
+    dellist = list(set(result) - set(refilling))
+    return dellist, refilling
+
+if __name__ == "__main__":
+    result, title = data_Filling()
+    whitelist = white_List()
+    blacklist = black_List()
+    dellist, refilling = bw_Filling(result, whitelist, blacklist)
+    print(refilling)
