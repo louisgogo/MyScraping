@@ -43,7 +43,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     result, title = data_Filling()
 
     # 生成结果CSV文件
-    with codecs.open("job_Detail.csv", "w", encoding="utf_8_sig") as f:
+    with codecs.open("E:\job_Detail.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
         f_csv.writerow(title)
         f_csv.writerows(result)
@@ -71,12 +71,12 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
     blacklist = black_List()
     dellist, refilling = bw_Filling(result, whitelist, blacklist)
 # 将筛选后删除的结果列示出来
-    with codecs.open("job_Del.csv", "w", encoding="utf_8_sig") as f:
+    with codecs.open("E:\job_Del.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
         f_csv.writerows(dellist)
         print("未进行自动投递的文件生成")
 # 将筛选后的结果发送到邮箱
-    with codecs.open("job_Filter.csv", "w", encoding="utf_8_sig") as f:
+    with codecs.open("E:\job_Filter.csv", "w", encoding="utf_8_sig") as f:
         f_csv = csv.writer(f)
         f_csv.writerow(title)
         f_csv.writerows(refilling)
@@ -108,6 +108,7 @@ def run(jobarea, homeAddress, homeCity, email, income, subject, *args):
             print(i[13], i[14])
             job_apply(i[13], headers, cookies, i[14])
             print("已投递企业信息：", i[0], i[3])
+
 
 if __name__ == "__main__":
     jobarea = '090200'  # 提供基本参数，广东030000，四川090000，省会编码是0200

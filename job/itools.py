@@ -63,7 +63,7 @@ def send_email(SMTP_host, from_account, from_passwd, to_account, subject, conten
     msg['From'] = from_account
     msg['To'] = to_account
     msg.attach(MIMEText(content, 'plain', 'utf-8'))
-    with open(file_name, 'rb') as f:
+    with open('E:\{0}'.format(file_name), 'rb') as f:
         mime = MIMEText(f.read(), 'base64', 'utf_8')
         mime["Content-Type"] = 'application/octet-stream'
         mime["Content-Disposition"] = 'attachment; filename={0}{1}'.format(
